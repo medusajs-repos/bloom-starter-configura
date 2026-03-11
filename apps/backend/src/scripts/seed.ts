@@ -18,6 +18,7 @@ import {
   linkProductsToSalesChannelWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   updateStoresWorkflow,
+  createDefaultsWorkflow,
 } from "@medusajs/medusa/core-flows";
 
 export default async function seedDemoData({ container }: ExecArgs) {
@@ -27,6 +28,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
   const query = container.resolve(ContainerRegistrationKeys.QUERY);
+
+  logger.info("Seeding defaults...");
+  await createDefaultsWorkflow(container).run();
+
 
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
