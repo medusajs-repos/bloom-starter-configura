@@ -1,0 +1,77 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=DM+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@import "./theme.css";
+
+@layer base {
+  :root {
+    @apply antialiased;
+    background-color: #ffffff;
+    color: #0a0a0a;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-weight: 400;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    font-weight: 500;
+  }
+}
+
+@layer components {
+  .content-container {
+    @apply max-w-[1440px] w-full mx-auto px-6 md:px-10 lg:px-14;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  input:not([type="checkbox"]):focus ~ label,
+  input:not([type="checkbox"]):not(:placeholder-shown) ~ label {
+    @apply -translate-y-2 text-xs font-medium;
+  }
+
+  input:not([type="checkbox"]):focus ~ label {
+    @apply left-0;
+  }
+}
+
+@keyframes dropdown-open {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes dropdown-close {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1rem);
+  }
+}
