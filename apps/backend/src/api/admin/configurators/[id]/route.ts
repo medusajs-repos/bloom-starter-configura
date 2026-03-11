@@ -62,6 +62,7 @@ export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
       
       // Delete all options first
       for (const step of configurator.steps || []) {
+        if (!step) continue
         if (step.options?.length) {
           const optionIds = step.options.map((o: any) => o.id)
           await configuratorService.deleteConfiguratorOptions(optionIds)

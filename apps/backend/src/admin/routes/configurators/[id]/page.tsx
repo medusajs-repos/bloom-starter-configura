@@ -27,7 +27,7 @@ const ConfiguratorDetailPage = () => {
   const loadProducts = async () => {
     try {
       setLoadingProducts(true)
-      const data = await sdk.client.fetch(`/admin/products?limit=100`)
+      const data = await sdk.client.fetch(`/admin/products?limit=100`) as any
       setProducts(data.products || [])
     } catch (err) {
       console.error("Failed to load products:", err)
@@ -39,7 +39,7 @@ const ConfiguratorDetailPage = () => {
   const loadConfigurator = async () => {
     try {
       setIsLoading(true)
-      const data = await sdk.client.fetch(`/admin/configurators/${id}`)
+      const data = await sdk.client.fetch(`/admin/configurators/${id}`) as any
       setConfigurator(data.configurator)
       setFormData({
         name: data.configurator.name,

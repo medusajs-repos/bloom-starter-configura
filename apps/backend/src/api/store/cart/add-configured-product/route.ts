@@ -1,8 +1,19 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { addToCartWorkflow } from "@medusajs/medusa/core-flows"
 
+type AddConfiguredProductBody = {
+  cart_id: string
+  product_id?: string
+  variant_id: string
+  quantity?: number
+  configuration?: {
+    selections?: Record<string, string>
+  }
+}
+
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  const { cart_id, product_id, variant_id, quantity = 1, configuration } = req.body
+  const body = req.body as AddConfiguredProductBody
+  const { cart_id, product_id, variant_id, quantity = 1, configuration } = body
   
   if (!cart_id || !variant_id) {
     return res.status(400).json({ 
@@ -16,7 +27,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const componentSkus: string[] = []
   
   if (configuration && configuration.selections) {
-    const optionIds = Object.values(configuration.selections)
+    const optionIds = Object.values(configuration.selections) as string[]
     
     if (optionIds.length > 0) {
       const { data: options } = await query.graph({
@@ -51,6 +62,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   // Add item to cart with metadata
   const { result } = await addToCartWorkflow(req.scope).run({
     input: {
+      cart_id,
       items: [{
         variant_id,
         quantity,
