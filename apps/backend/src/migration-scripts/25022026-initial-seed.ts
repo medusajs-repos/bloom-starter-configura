@@ -64,6 +64,15 @@ export default async function initialSeed({ container }: ExecArgs) {
     defaultSalesChannel = salesChannelResult;
   }
 
+  const defaultChannel = defaultSalesChannel
+
+  function buildPrices(amounts: Record<string, number>) {
+    return Object.entries(amounts).map(([currency_code, amount]) => ({
+      currency_code,
+      amount,
+    }));
+  }
+
   await updateStoresWorkflow(container).run({
     input: {
       selector: { id: store.id },
@@ -385,606 +394,686 @@ export default async function initialSeed({ container }: ExecArgs) {
   logger.info("Finished seeding product categories.");
 
   // ---------------------------------------------------------------------------
-  // Product collections
-  // ---------------------------------------------------------------------------
-  logger.info("Seeding product collections...");
-  const { data: existingCollections } = await query.graph({
-    entity: "product_collection",
-    fields: ["id", "handle"],
-  });
-
-  const collectionHandles = existingCollections.map((c: any) => c.handle);
-  const collectionsToCreate: CreateProductCollectionDTO[] = [];
-
-  if (!collectionHandles.includes("core-essentials")) {
-    collectionsToCreate.push({ title: "Core Essentials", handle: "core-essentials" });
-  }
-  if (!collectionHandles.includes("studio-training")) {
-    collectionsToCreate.push({ title: "Studio & Training", handle: "studio-training" });
-  }
-  if (!collectionHandles.includes("outer-layers")) {
-    collectionsToCreate.push({ title: "Outer Layers", handle: "outer-layers" });
-  }
-
-  if (collectionsToCreate.length > 0) {
-    await createCollectionsWorkflow(container).run({
-      input: { collections: collectionsToCreate },
-    });
-  }
-
-  const { data: collections } = await query.graph({
-    entity: "product_collection",
-    fields: ["id", "handle"],
-  });
-
-  const getCollectionId = (handle: string): string | undefined => {
-    const col = collections.find((c: any) => c.handle === handle);
-    return col ? col.id : undefined;
-  };
-
-  logger.info("Finished seeding product collections.");
-
-  // ---------------------------------------------------------------------------
   // Products
   // ---------------------------------------------------------------------------
-  const getAllImages = (colorImages: Record<string, string[]>) =>
-    Object.values(colorImages).flat();
+  logger.info("Creating main chair products...");
 
-  const getFirstImage = (colorImages: Record<string, string[]>) => {
-    const firstColor = Object.keys(colorImages)[0];
-    return colorImages[firstColor][0];
-  };
-
-  const crewneckSweatshirtImages = {
-    Sand: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck1_1-01KGSCT0CNMZ7V81SH9F15DV6W.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck1_3-01KGSCT1CSXAJXSCZWV57CJPVK.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck1_2-01KGSCT0WNN9SFNV0JWMHV9B72.jpeg",
-    ],
-    Charcoal: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck2_1-01KGSCWGCHNRSDVAYR110F1HHM.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck2_3-01KGSCWH7RYVJD5JG3NY5H319T.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck2_2-01KGSCWGVMKEDRSNHZK5KR9P0E.jpeg",
-    ],
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck3_2-01KGSCWJ2MA3EH4S03MBY49978.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck3_1-01KGSCWHKH6ZMASJ8CVBEZWCWX.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck3_3-01KGSCWJG2X3QP3PKT4E0K86M0.jpeg",
-    ],
-  };
-
-  const relaxedJoggerImages = {
-    Charcoal: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-2-01KGSBR3R5A1KXA1MBX09R0YJ1.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-2-01KGSBR3R5A1KXA1MBX09R0YJ1.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-2-01KGSBR0QDAFTZF1RZ3BKEHWNT.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/jogger_3-1--01KGSE8J6J6R4MX4MBXS23A2JQ.jpeg",
-    ],
-  };
-
-  const ribbedLongSleeveImages = {
-    Sand: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/ribbed_shirt2_front-01KGSE13JNVTDS7FENZXKCFTNX.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/ribbed_shirt2_zoom-01KGSE1460SM7KTBFME9E0ZM44.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/ribbed_shirt2_back-01KGSE12WG3NA5HVMVG01QQFNC.jpeg",
-    ],
-    Charcoal: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/ribbed_shirt_back-01KGSE1B4F15M9FPY40WMVPDD6.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/ribbed_shirt_zoom-01KGSE1BXYDSPXGBMD9QA8M94B.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/ribbed_shirt_front-01KGSE1BH59AK1ASMZ40JYRM7P.jpeg",
-    ],
-  };
-
-  const minimalTeeImages = {
-    White: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-3-01KGSBVR4PGHBXD1HDT15MYD9H.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-3-01KGSARG88PY6CNQ15DYNC713F.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-3-01KGSARG88PY6CNQ15DYNC713F.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-3-01KGSBR1478FXAJCGEVGCXQR3C.jpeg",
-    ],
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-2-01KGSBVTFE71N6CYS8ZQWSNHQD.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-3-01KGSARG88PY6CNQ15DYNC713F.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-7-2-01KGSC1D3AQKECBVKE4K0AQ9FS.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/crewneck3_3-01KGSEVWEPJMJ9XNNAEGMQEP86.jpeg",
-    ],
-    Black: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-9--01KGSC52E48079HX7AR6BA3Q0Z.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-11--01KGSC5418JV4T8KKCQ06CRQP4.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-3-01KGSARG88PY6CNQ15DYNC713F.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-10--01KGSC538TNRBY8DF075E9628Z.jpeg",
-    ],
-  };
-
-  const lightweightTrainingShortImages = {
-    Black: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-4-01KGSARGR6P7GGYFNC9ZPGSVC6.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-4-01KGSBR1FWQYV3EH1C68DKN46C.jpeg",
-    ],
-    Grey: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/jogger2_1-01KGSECPE6WH37YHY5VCY3MT4N.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/jogger2_2-01KGSECPWC73BYC0BZP5MY5410.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/jogger2_3-01KGSECQ8P1BR4WSAVV566P6SY.jpeg",
-    ],
-  };
-
-  const ribbedSportsBraImages = {
-    Sand: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-4-01KGSBVTVHDK8ZJWKRN0D8XY5S.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-5-01KGSARH3BS8408VG20V5NX2HM.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-8-4-01KGSC1FD2MTY826F73904FTPW.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-7-4-01KGSC1DFVJHYE5YZJ47MQWXZD.jpeg",
-    ],
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-5-01KGSBR1VJXZMB9YQZ0DEYVT7V.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-5-01KGSARH3BS8408VG20V5NX2HM.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-5-01KGSBVRGRRAC9K0NSHKDRJY0Y.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-5-01KGSARH3BS8408VG20V5NX2HM.jpeg",
-    ],
-  };
-
-  const performanceLeggingImages = {
-    Charcoal: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-6-01KGSBR27V7F3G07P6NTSC1H0M.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-6-01KGSARHJNHSYSQP485SD61SV2.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-6-01KGSBVRY578V8GYVJ8PANB25S.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-6-01KGSBR27V7F3G07P6NTSC1H0M.jpeg",
-    ],
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-7-5-01KGSC1DWZQZVQV7CNYPNSRNFN.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-8-5-01KGSC1FRSG8GV7QHN8XSHA9SN.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-5-01KGSBVV8EJC8CRAFQQKDXAX75.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-6-01KGSBR27V7F3G07P6NTSC1H0M.jpeg",
-    ],
-  };
-
-  const studioZipJacketImages = {
-    Black: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-6-01KGSBVVMJHTEN9YGKS1PVEGY1.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-6-01KGSBVVMJHTEN9YGKS1PVEGY1.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-8-6-01KGSC1G51R6D791THRRYZYZ7E.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-7-6-01KGSC1E9SD81SDHXEKX1RX5F9.jpeg",
-    ],
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-7-01KGSBVSA92HNH0S83YZ3ZHJVV.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-7-01KGSBQZDY0NTTDEEEW3PGR10N.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-6-01KGSBVVMJHTEN9YGKS1PVEGY1.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-7-01KGSBR2KFFSHAY2EC2XKY00NR.jpeg",
-    ],
-  };
-
-  const movementWindbreakerImages = {
-    Sand: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-8-01KGSBR2ZZAKW4P5Y9JK18MWHG.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-8-01KGSBQZYP0GF1K8X1XWSR52Q7.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-8-01KGSBVSP59A7XHDG28ZWPFM1J.jpeg",
-    ],
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-7-01KGSBVW0V6AJQ8DRTWYHWV45N.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-7-7-01KGSC1ENQZ7MDWG2NTET6P4HT.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-8-7-01KGSC1GRS18BZ8TWTF63VB8DV.jpeg",
-    ],
-  };
-
-  const travelHoodieImages = {
-    "Off-White": [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-3-9-01KGSBR0AAFDBNH7ZJKJVMC1N6.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-5-9-01KGSBVT29E00TB0Q4F7147S8T.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-4-9-01KGSBR3BD9WBQ0YEC44M6M9JZ.jpeg",
-    ],
-  };
-
-  const quiltedRecoveryVestImages = {
-    Charcoal: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-7-8-01KGSC1F0YEC3PY0DWMP4G1JRT.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-6-8-01KGSC1CPN09ERH9B7N1G4RBFW.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-8-8-01KGSC5152ASPD1NJZ94JVHKJ8.jpeg",
-    ],
-  };
-
-  const warmUpOvershirtImages = {
-    Olive: [
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-9-2-01KGSC51ZZC5J8095Q3TDHBYJ1.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-11-2-01KGSC53MK9CFA4YD05M2J3VWS.jpeg",
-      "https://cdn.mignite.app/ws/works_01KGFKTHDC6ZD3WS7GQTX8992N/-NanoBanana-2026-02-05-10-2-01KGSC52W409H3Q50JC02JV0BR.jpeg",
-    ],
-  };
-
-  logger.info("Seeding products...");
-
-  const productsToCreate = [
-    {
-      title: "Crewneck Sweatshirt",
-      handle: "crewneck-sweatshirt",
-      subtitle: "Crewneck sweatshirt",
-      description:
-        "A heavyweight crewneck designed for everyday comfort with a structured, premium feel.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("sweatshirts") ? [getCategoryId("sweatshirts")!] : [],
-      collection_id: getCollectionId("core-essentials"),
-      thumbnail: getFirstImage(crewneckSweatshirtImages),
-      images: getAllImages(crewneckSweatshirtImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Sand", "Charcoal", "Olive"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Sand", sku: "ESS-CREW-SAND-S", manage_inventory: false, options: { Color: "Sand", Size: "S" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "M / Sand", sku: "ESS-CREW-SAND-M", manage_inventory: false, options: { Color: "Sand", Size: "M" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "L / Sand", sku: "ESS-CREW-SAND-L", manage_inventory: false, options: { Color: "Sand", Size: "L" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "XL / Sand", sku: "ESS-CREW-SAND-XL", manage_inventory: false, options: { Color: "Sand", Size: "XL" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "S / Charcoal", sku: "ESS-CREW-CHAR-S", manage_inventory: false, options: { Color: "Charcoal", Size: "S" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "M / Charcoal", sku: "ESS-CREW-CHAR-M", manage_inventory: false, options: { Color: "Charcoal", Size: "M" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "L / Charcoal", sku: "ESS-CREW-CHAR-L", manage_inventory: false, options: { Color: "Charcoal", Size: "L" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "XL / Charcoal", sku: "ESS-CREW-CHAR-XL", manage_inventory: false, options: { Color: "Charcoal", Size: "XL" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "S / Olive", sku: "ESS-CREW-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "M / Olive", sku: "ESS-CREW-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "L / Olive", sku: "ESS-CREW-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "XL / Olive", sku: "ESS-CREW-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-      ],
-      variantImageMap: crewneckSweatshirtImages,
-    },
-    {
-      title: "Relaxed Jogger Pant",
-      handle: "relaxed-jogger-pant",
-      subtitle: "Relaxed jogger pant",
-      description: "Minimalist joggers with a tailored silhouette—ideal for travel or downtime.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("joggers") ? [getCategoryId("joggers")!] : [],
-      collection_id: getCollectionId("core-essentials"),
-      thumbnail: getFirstImage(relaxedJoggerImages),
-      images: getAllImages(relaxedJoggerImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Charcoal"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Charcoal", sku: "RLX-JOG-CHAR-S", manage_inventory: false, options: { Color: "Charcoal", Size: "S" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "M / Charcoal", sku: "RLX-JOG-CHAR-M", manage_inventory: false, options: { Color: "Charcoal", Size: "M" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "L / Charcoal", sku: "RLX-JOG-CHAR-L", manage_inventory: false, options: { Color: "Charcoal", Size: "L" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "XL / Charcoal", sku: "RLX-JOG-CHAR-XL", manage_inventory: false, options: { Color: "Charcoal", Size: "XL" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-      ],
-      variantImageMap: relaxedJoggerImages,
-    },
-    {
-      title: "Ribbed Long Sleeve Top",
-      handle: "ribbed-long-sleeve-top",
-      subtitle: "Ribbed long sleeve top",
-      description: "A refined layering piece with subtle rib texture and stretch.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("long-sleeves") ? [getCategoryId("long-sleeves")!] : [],
-      collection_id: getCollectionId("core-essentials"),
-      thumbnail: getFirstImage(ribbedLongSleeveImages),
-      images: getAllImages(ribbedLongSleeveImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Sand", "Charcoal"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Sand", sku: "RIB-LS-SAND-S", manage_inventory: false, options: { Color: "Sand", Size: "S" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "M / Sand", sku: "RIB-LS-SAND-M", manage_inventory: false, options: { Color: "Sand", Size: "M" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "L / Sand", sku: "RIB-LS-SAND-L", manage_inventory: false, options: { Color: "Sand", Size: "L" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "XL / Sand", sku: "RIB-LS-SAND-XL", manage_inventory: false, options: { Color: "Sand", Size: "XL" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "S / Charcoal", sku: "RIB-LS-CHAR-S", manage_inventory: false, options: { Color: "Charcoal", Size: "S" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "M / Charcoal", sku: "RIB-LS-CHAR-M", manage_inventory: false, options: { Color: "Charcoal", Size: "M" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "L / Charcoal", sku: "RIB-LS-CHAR-L", manage_inventory: false, options: { Color: "Charcoal", Size: "L" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-        { title: "XL / Charcoal", sku: "RIB-LS-CHAR-XL", manage_inventory: false, options: { Color: "Charcoal", Size: "XL" }, prices: [{ currency_code: "usd", amount: 58 }, { currency_code: "eur", amount: 58 }, { currency_code: "gbp", amount: 49 }, { currency_code: "dkk", amount: 432 }] },
-      ],
-      variantImageMap: ribbedLongSleeveImages,
-    },
-    {
-      title: "Minimal Tee",
-      handle: "minimal-tee",
-      subtitle: "Minimal tee",
-      description: "Ultra-soft everyday tee with a clean neckline and athletic drape.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("t-shirts") ? [getCategoryId("t-shirts")!] : [],
-      collection_id: getCollectionId("core-essentials"),
-      thumbnail: getFirstImage(minimalTeeImages),
-      images: getAllImages(minimalTeeImages).map((url) => ({ url })),
-      options: [
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-        { title: "Color", values: ["White", "Olive", "Black"] },
-      ],
-      variants: [
-        { title: "S / White", sku: "MIN-TEE-WHT-S", manage_inventory: false, options: { Color: "White", Size: "S" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "M / White", sku: "MIN-TEE-WHT-M", manage_inventory: false, options: { Color: "White", Size: "M" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "L / White", sku: "MIN-TEE-WHT-L", manage_inventory: false, options: { Color: "White", Size: "L" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "XL / White", sku: "MIN-TEE-WHT-XL", manage_inventory: false, options: { Color: "White", Size: "XL" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "S / Olive", sku: "MIN-TEE-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "M / Olive", sku: "MIN-TEE-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "L / Olive", sku: "MIN-TEE-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "XL / Olive", sku: "MIN-TEE-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "S / Black", sku: "MIN-TEE-BLK-S", manage_inventory: false, options: { Color: "Black", Size: "S" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "M / Black", sku: "MIN-TEE-BLK-M", manage_inventory: false, options: { Color: "Black", Size: "M" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "L / Black", sku: "MIN-TEE-BLK-L", manage_inventory: false, options: { Color: "Black", Size: "L" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-        { title: "XL / Black", sku: "MIN-TEE-BLK-XL", manage_inventory: false, options: { Color: "Black", Size: "XL" }, prices: [{ currency_code: "usd", amount: 38 }, { currency_code: "eur", amount: 38 }, { currency_code: "gbp", amount: 32 }, { currency_code: "dkk", amount: 283 }] },
-      ],
-      variantImageMap: minimalTeeImages,
-    },
-    {
-      title: "Lightweight Training Short",
-      handle: "lightweight-training-short",
-      subtitle: "Lightweight training short",
-      description: "Breathable short with a clean waistband and built-in liner.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("shorts") ? [getCategoryId("shorts")!] : [],
-      collection_id: getCollectionId("studio-training"),
-      thumbnail: getFirstImage(lightweightTrainingShortImages),
-      images: getAllImages(lightweightTrainingShortImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Black", "Grey"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Black", sku: "TRN-SHT-BLK-S", manage_inventory: false, options: { Color: "Black", Size: "S" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "M / Black", sku: "TRN-SHT-BLK-M", manage_inventory: false, options: { Color: "Black", Size: "M" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "L / Black", sku: "TRN-SHT-BLK-L", manage_inventory: false, options: { Color: "Black", Size: "L" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "XL / Black", sku: "TRN-SHT-BLK-XL", manage_inventory: false, options: { Color: "Black", Size: "XL" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "S / Grey", sku: "TRN-SHT-CHAR-S", manage_inventory: false, options: { Color: "Grey", Size: "S" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "M / Grey", sku: "TRN-SHT-CHAR-M", manage_inventory: false, options: { Color: "Grey", Size: "M" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "L / Grey", sku: "TRN-SHT-CHAR-L", manage_inventory: false, options: { Color: "Grey", Size: "L" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-        { title: "XL / Grey", sku: "TRN-SHT-CHAR-XL", manage_inventory: false, options: { Color: "Grey", Size: "XL" }, prices: [{ currency_code: "usd", amount: 52 }, { currency_code: "eur", amount: 52 }, { currency_code: "gbp", amount: 44 }, { currency_code: "dkk", amount: 387 }] },
-      ],
-      variantImageMap: lightweightTrainingShortImages,
-    },
-    {
-      title: "Ribbed Sports Bra",
-      handle: "ribbed-sports-bra",
-      subtitle: "Ribbed sports bra",
-      description: "Medium-support bra with minimalist seams and soft compression.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("bras") ? [getCategoryId("bras")!] : [],
-      collection_id: getCollectionId("studio-training"),
-      thumbnail: getFirstImage(ribbedSportsBraImages),
-      images: getAllImages(ribbedSportsBraImages).map((url) => ({ url })),
-      options: [
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-        { title: "Color", values: ["Sand", "Olive"] },
-      ],
-      variants: [
-        { title: "S / Sand", sku: "RIB-BRA-SAND-S", manage_inventory: false, options: { Color: "Sand", Size: "S" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "M / Sand", sku: "RIB-BRA-SAND-M", manage_inventory: false, options: { Color: "Sand", Size: "M" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "L / Sand", sku: "RIB-BRA-SAND-L", manage_inventory: false, options: { Color: "Sand", Size: "L" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "XL / Sand", sku: "RIB-BRA-SAND-XL", manage_inventory: false, options: { Color: "Sand", Size: "XL" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "S / Olive", sku: "RIB-BRA-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "M / Olive", sku: "RIB-BRA-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "L / Olive", sku: "RIB-BRA-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-        { title: "XL / Olive", sku: "RIB-BRA-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 48 }, { currency_code: "eur", amount: 48 }, { currency_code: "gbp", amount: 41 }, { currency_code: "dkk", amount: 357 }] },
-      ],
-      variantImageMap: ribbedSportsBraImages,
-    },
-    {
-      title: "Performance Legging",
-      handle: "performance-legging",
-      subtitle: "Performance legging",
-      description: "Sculpting high-rise leggings built for studio training and daily movement.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("leggings") ? [getCategoryId("leggings")!] : [],
-      collection_id: getCollectionId("studio-training"),
-      thumbnail: getFirstImage(performanceLeggingImages),
-      images: getAllImages(performanceLeggingImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Charcoal", "Olive"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Charcoal", sku: "PERF-LEG-CHAR-S", manage_inventory: false, options: { Color: "Charcoal", Size: "S" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "M / Charcoal", sku: "PERF-LEG-CHAR-M", manage_inventory: false, options: { Color: "Charcoal", Size: "M" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "L / Charcoal", sku: "PERF-LEG-CHAR-L", manage_inventory: false, options: { Color: "Charcoal", Size: "L" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "XL / Charcoal", sku: "PERF-LEG-CHAR-XL", manage_inventory: false, options: { Color: "Charcoal", Size: "XL" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "S / Olive", sku: "PERF-LEG-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "M / Olive", sku: "PERF-LEG-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "L / Olive", sku: "PERF-LEG-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-        { title: "XL / Olive", sku: "PERF-LEG-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 88 }, { currency_code: "eur", amount: 88 }, { currency_code: "gbp", amount: 75 }, { currency_code: "dkk", amount: 655 }] },
-      ],
-      variantImageMap: performanceLeggingImages,
-    },
-    {
-      title: "Studio Zip Jacket",
-      handle: "studio-zip-jacket",
-      subtitle: "Studio zip jacket",
-      description: "Streamlined zip layer designed for warmups and cool-downs.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("jackets") ? [getCategoryId("jackets")!] : [],
-      collection_id: getCollectionId("studio-training"),
-      thumbnail: getFirstImage(studioZipJacketImages),
-      images: getAllImages(studioZipJacketImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Black", "Olive"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Black", sku: "STU-ZIP-BLK-S", manage_inventory: false, options: { Color: "Black", Size: "S" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "M / Black", sku: "STU-ZIP-BLK-M", manage_inventory: false, options: { Color: "Black", Size: "M" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "L / Black", sku: "STU-ZIP-BLK-L", manage_inventory: false, options: { Color: "Black", Size: "L" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "XL / Black", sku: "STU-ZIP-BLK-XL", manage_inventory: false, options: { Color: "Black", Size: "XL" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "S / Olive", sku: "STU-ZIP-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "M / Olive", sku: "STU-ZIP-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "L / Olive", sku: "STU-ZIP-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-        { title: "XL / Olive", sku: "STU-ZIP-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 128 }, { currency_code: "eur", amount: 128 }, { currency_code: "gbp", amount: 109 }, { currency_code: "dkk", amount: 953 }] },
-      ],
-      variantImageMap: studioZipJacketImages,
-    },
-    {
-      title: "Movement Windbreaker",
-      handle: "movement-windbreaker",
-      subtitle: "Movement windbreaker",
-      description: "Featherlight outer shell for transitional weather and urban movement.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("jackets") ? [getCategoryId("jackets")!] : [],
-      collection_id: getCollectionId("outer-layers"),
-      thumbnail: getFirstImage(movementWindbreakerImages),
-      images: getAllImages(movementWindbreakerImages).map((url) => ({ url })),
-      options: [
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-        { title: "Color", values: ["Sand", "Olive"] },
-      ],
-      variants: [
-        { title: "S / Sand", sku: "MOV-WIND-SAND-S", manage_inventory: false, options: { Color: "Sand", Size: "S" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "M / Sand", sku: "MOV-WIND-SAND-M", manage_inventory: false, options: { Color: "Sand", Size: "M" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "L / Sand", sku: "MOV-WIND-SAND-L", manage_inventory: false, options: { Color: "Sand", Size: "L" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "XL / Sand", sku: "MOV-WIND-SAND-XL", manage_inventory: false, options: { Color: "Sand", Size: "XL" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "S / Olive", sku: "MOV-WIND-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "M / Olive", sku: "MOV-WIND-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "L / Olive", sku: "MOV-WIND-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-        { title: "XL / Olive", sku: "MOV-WIND-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 138 }, { currency_code: "eur", amount: 138 }, { currency_code: "gbp", amount: 117 }, { currency_code: "dkk", amount: 1027 }] },
-      ],
-      variantImageMap: movementWindbreakerImages,
-    },
-    {
-      title: "Travel Hoodie",
-      handle: "travel-hoodie",
-      subtitle: "Travel hoodie",
-      description: "Elevated hoodie with clean lines and premium weight.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("hoodies") ? [getCategoryId("hoodies")!] : [],
-      collection_id: getCollectionId("outer-layers"),
-      thumbnail: getFirstImage(travelHoodieImages),
-      images: getAllImages(travelHoodieImages).map((url) => ({ url })),
-      options: [
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-        { title: "Color", values: ["Off-White"] },
-      ],
-      variants: [
-        { title: "S / Off-White", sku: "TRV-HOOD-OWHT-S", manage_inventory: false, options: { Color: "Off-White", Size: "S" }, prices: [{ currency_code: "usd", amount: 108 }, { currency_code: "eur", amount: 108 }, { currency_code: "gbp", amount: 92 }, { currency_code: "dkk", amount: 804 }] },
-        { title: "M / Off-White", sku: "TRV-HOOD-OWHT-M", manage_inventory: false, options: { Color: "Off-White", Size: "M" }, prices: [{ currency_code: "usd", amount: 108 }, { currency_code: "eur", amount: 108 }, { currency_code: "gbp", amount: 92 }, { currency_code: "dkk", amount: 804 }] },
-        { title: "L / Off-White", sku: "TRV-HOOD-OWHT-L", manage_inventory: false, options: { Color: "Off-White", Size: "L" }, prices: [{ currency_code: "usd", amount: 108 }, { currency_code: "eur", amount: 108 }, { currency_code: "gbp", amount: 92 }, { currency_code: "dkk", amount: 804 }] },
-        { title: "XL / Off-White", sku: "TRV-HOOD-OWHT-XL", manage_inventory: false, options: { Color: "Off-White", Size: "XL" }, prices: [{ currency_code: "usd", amount: 108 }, { currency_code: "eur", amount: 108 }, { currency_code: "gbp", amount: 92 }, { currency_code: "dkk", amount: 804 }] },
-      ],
-      variantImageMap: travelHoodieImages,
-    },
-    {
-      title: "Quilted Recovery Vest",
-      handle: "quilted-recovery-vest",
-      subtitle: "Quilted recovery vest",
-      description: "Minimal insulated vest designed for layering post-training.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("jackets") ? [getCategoryId("jackets")!] : [],
-      collection_id: getCollectionId("outer-layers"),
-      thumbnail: getFirstImage(quiltedRecoveryVestImages),
-      images: getAllImages(quiltedRecoveryVestImages).map((url) => ({ url })),
-      options: [
-        { title: "Color", values: ["Charcoal"] },
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-      ],
-      variants: [
-        { title: "S / Charcoal", sku: "QUILT-VST-CHAR-S", manage_inventory: false, options: { Color: "Charcoal", Size: "S" }, prices: [{ currency_code: "usd", amount: 118 }, { currency_code: "eur", amount: 118 }, { currency_code: "gbp", amount: 100 }, { currency_code: "dkk", amount: 878 }] },
-        { title: "M / Charcoal", sku: "QUILT-VST-CHAR-M", manage_inventory: false, options: { Color: "Charcoal", Size: "M" }, prices: [{ currency_code: "usd", amount: 118 }, { currency_code: "eur", amount: 118 }, { currency_code: "gbp", amount: 100 }, { currency_code: "dkk", amount: 878 }] },
-        { title: "L / Charcoal", sku: "QUILT-VST-CHAR-L", manage_inventory: false, options: { Color: "Charcoal", Size: "L" }, prices: [{ currency_code: "usd", amount: 118 }, { currency_code: "eur", amount: 118 }, { currency_code: "gbp", amount: 100 }, { currency_code: "dkk", amount: 878 }] },
-        { title: "XL / Charcoal", sku: "QUILT-VST-CHAR-XL", manage_inventory: false, options: { Color: "Charcoal", Size: "XL" }, prices: [{ currency_code: "usd", amount: 118 }, { currency_code: "eur", amount: 118 }, { currency_code: "gbp", amount: 100 }, { currency_code: "dkk", amount: 878 }] },
-      ],
-      variantImageMap: quiltedRecoveryVestImages,
-    },
-    {
-      title: "Warm-Up Overshirt",
-      handle: "warm-up-overshirt",
-      subtitle: "Warm-up overshirt jacket",
-      description: "A structured overshirt jacket blending utility and comfort.",
-      status: "published" as const,
-      is_giftcard: false,
-      discountable: true,
-      category_ids: getCategoryId("jackets") ? [getCategoryId("jackets")!] : [],
-      collection_id: getCollectionId("outer-layers"),
-      thumbnail: getFirstImage(warmUpOvershirtImages),
-      images: getAllImages(warmUpOvershirtImages).map((url) => ({ url })),
-      options: [
-        { title: "Size", values: ["S", "M", "L", "XL"] },
-        { title: "Color", values: ["Olive"] },
-      ],
-      variants: [
-        { title: "S / Olive", sku: "WARM-OVR-OLIV-S", manage_inventory: false, options: { Color: "Olive", Size: "S" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "M / Olive", sku: "WARM-OVR-OLIV-M", manage_inventory: false, options: { Color: "Olive", Size: "M" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "L / Olive", sku: "WARM-OVR-OLIV-L", manage_inventory: false, options: { Color: "Olive", Size: "L" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-        { title: "XL / Olive", sku: "WARM-OVR-OLIV-XL", manage_inventory: false, options: { Color: "Olive", Size: "XL" }, prices: [{ currency_code: "usd", amount: 98 }, { currency_code: "eur", amount: 98 }, { currency_code: "gbp", amount: 83 }, { currency_code: "dkk", amount: 729 }] },
-      ],
-      variantImageMap: warmUpOvershirtImages,
-    },
-  ];
-
-  const productsForWorkflow = productsToCreate.map(
-    ({ variantImageMap, ...product }) => product
-  );
-
-  const { result: createdProducts } = await createProductsWorkflow(
+  const { result: mainProductsResult } = await createProductsWorkflow(
     container
   ).run({
-    input: { products: productsForWorkflow },
+    input: {
+      products: [
+        {
+          title: "Oslo Executive Office Chair",
+          handle: "oslo-executive-office-chair",
+          status: "published" as const,
+          description:
+            "Engineered for the discerning professional, the Oslo Executive Chair combines premium black leather upholstery with a polished chrome base and armrests. The high-density foam cushioning and ergonomic backrest contour provide all-day comfort, while the five-wheel chrome caster base offers smooth, effortless mobility. A commanding presence in any high-end workspace.",
+          thumbnail:
+            "https://cdn.mignite.app/ws/works_01KHQX6EG3S3V9XTHBYPWQCEYQ/nano_banana_pro_20260309_152037_1-01KK9HJ5CZP0S1PKQ1PXMP8D7R.png",
+          discountable: true,
+          metadata: { is_component: true },
+          images: [
+            {
+              url: "https://cdn.mignite.app/ws/works_01KHQX6EG3S3V9XTHBYPWQCEYQ/nano_banana_pro_20260309_152037_1-01KK9HJ5CZP0S1PKQ1PXMP8D7R.png",
+            },
+            {
+              url: "https://cdn.mignite.app/ws/works_01KHQX6EG3S3V9XTHBYPWQCEYQ/nano_banana_pro_20260309_160200_1-01KK9JFX9V5PNCE3GSF53YQHFM.png",
+            },
+          ],
+          options: [{ title: "Default option", values: ["Default option value"] }],
+          variants: [
+            {
+              title: "Oslo Wooden Office Chair",
+              manage_inventory: false,
+              options: { "Default option": "Default option value" },
+              prices: buildPrices({ gbp: 899, eur: 1052, usd: 1142 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen Executive Chair",
+          handle: "bergen-executive-chair",
+          status: "published" as const,
+          description:
+            "The Bergen Executive Chair delivers refined comfort through premium woven fabric upholstery and a polished chrome frame. Channelled seat and back panels provide structured support, while the four-star chrome base ensures smooth, stable movement. Fabric-covered armrests complete the cohesive look. A sophisticated choice for the modern executive environment.",
+          thumbnail:
+            "https://cdn.mignite.app/ws/works_01KHQX6EG3S3V9XTHBYPWQCEYQ/nano_banana_pro_20260309_160419_1-01KK9KC7TM0M0HTP02E017MQ2D.png",
+          discountable: true,
+          images: [
+            {
+              url: "https://cdn.mignite.app/ws/works_01KHQX6EG3S3V9XTHBYPWQCEYQ/nano_banana_pro_20260309_160419_1-01KK9KC7TM0M0HTP02E017MQ2D.png",
+            },
+            {
+              url: "https://cdn.mignite.app/ws/works_01KHQX6EG3S3V9XTHBYPWQCEYQ/nano_banana_pro_20260309_160819_1-01KK9KCHN823FS9RBNDS37P080.png",
+            },
+          ],
+          options: [{ title: "Default option", values: ["Default option value"] }],
+          variants: [
+            {
+              title: "Bergen Leather Executive Chair",
+              manage_inventory: false,
+              options: { "Default option": "Default option value" },
+              prices: buildPrices({ gbp: 1299, eur: 1520, usd: 1650 }),
+            },
+          ],
+        },
+      ],
+    },
   });
+
+  const osloProduct = mainProductsResult.find(
+    (p) => p.handle === "oslo-executive-office-chair"
+  )!;
+  const bergenProduct = mainProductsResult.find(
+    (p) => p.handle === "bergen-executive-chair"
+  )!;
+
+  logger.info(`Created: ${osloProduct.title} (${osloProduct.id})`);
+  logger.info(`Created: ${bergenProduct.title} (${bergenProduct.id})`);
+
+  // ---------------------------------------------------------------------------
+  // 5. Create Oslo component products (draft, is_component)
+  // ---------------------------------------------------------------------------
+  logger.info("Creating Oslo component products...");
+
+  function buildPrices(amounts: Record<string, number>) {
+    return Object.entries(amounts).map(([currency_code, amount]) => ({
+      currency_code,
+      amount,
+    }));
+  }
+
+  const { result: osloComponents } = await createProductsWorkflow(
+    container
+  ).run({
+    input: {
+      products: [
+        {
+          title: "Oslo - Stationary Base",
+          handle: "oslo-base-stationary",
+          status: "draft" as const,
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 75, eur: 88, usd: 95 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - Wheels Base",
+          handle: "oslo-base-wheels",
+          status: "draft" as const,
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 100, eur: 117, usd: 127 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - Brushed Metal Finish",
+          handle: "oslo-finish-brushed",
+          status: "draft" as const,
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 50, eur: 59, usd: 64 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - Chrome Finish",
+          handle: "oslo-finish-chrome",
+          status: "draft" as const,
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 75, eur: 88, usd: 95 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - Black Leather",
+          handle: "oslo-leather-black",
+          status: "draft" as const,
+          description: "Black leather upholstery component for the Oslo Executive Office Chair",
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 100, eur: 117, usd: 127 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - Brown Leather",
+          handle: "oslo-leather-brown",
+          status: "draft" as const,
+          description: "Brown leather upholstery component for the Oslo Executive Office Chair",
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 150, eur: 176, usd: 191 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - Without Armrests",
+          handle: "oslo-no-armrests",
+          status: "draft" as const,
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 0, eur: 0, usd: 0 }),
+            },
+          ],
+        },
+        {
+          title: "Oslo - With Armrests",
+          handle: "oslo-with-armrests",
+          status: "draft" as const,
+          discountable: false,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 125, eur: 146, usd: 159 }),
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  const osloComponentByHandle: Record<string, string> = {};
+  for (const p of osloComponents) {
+    osloComponentByHandle[p.handle] = p.id;
+  }
+  logger.info(`Created ${osloComponents.length} Oslo component products`);
+
+  // ---------------------------------------------------------------------------
+  // 6. Create Bergen component products (draft, is_component)
+  // ---------------------------------------------------------------------------
+  logger.info("Creating Bergen component products...");
+
+  const { result: bergenComponents } = await createProductsWorkflow(
+    container
+  ).run({
+    input: {
+      products: [
+        {
+          title: "Bergen - Height-Adjustable Base",
+          handle: "bergen-height-adjustable-base",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 70, eur: 82, usd: 89 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen - Executive Armrests",
+          handle: "bergen-executive-armrests",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 60, eur: 70, usd: 76 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen - Ergonomic Lumbar Support",
+          handle: "bergen-ergonomic-lumbar-support",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 80, eur: 94, usd: 102 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen - Premium Fabric Upholstery",
+          handle: "bergen-premium-fabric-upholstery",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 150, eur: 176, usd: 191 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen - Performance Fabric Upholstery",
+          handle: "bergen-performance-fabric-upholstery",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: true,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 120, eur: 140, usd: 152 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen - Adjustable Armrests",
+          handle: "bergen-adjustable-armrests",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: true,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 75, eur: 88, usd: 95 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen No Armrests",
+          handle: "bergen-no-armrests",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 0, eur: 0, usd: 0 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen Without Lumbar Support",
+          handle: "bergen-without-lumbar-support",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 0, eur: 0, usd: 0 }),
+            },
+          ],
+        },
+        {
+          title: "Bergen Fixed Base",
+          handle: "bergen-fixed-base",
+          status: "draft" as const,
+          discountable: true,
+          metadata: { is_component: true },
+          options: [{ title: "Default", values: ["Default"] }],
+          variants: [
+            {
+              title: "Default",
+              manage_inventory: false,
+              options: { Default: "Default" },
+              prices: buildPrices({ gbp: 0, eur: 0, usd: 0 }),
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  const bergenComponentByHandle: Record<string, string> = {};
+  for (const p of bergenComponents) {
+    bergenComponentByHandle[p.handle] = p.id;
+  }
+  logger.info(`Created ${bergenComponents.length} Bergen component products`);
+
+  // ---------------------------------------------------------------------------
+  // 7. Link all products to sales channel
+  // ---------------------------------------------------------------------------
+  logger.info("Linking products to sales channel...");
+
+  const allProductIds = [
+    osloProduct.id,
+    bergenProduct.id,
+    ...osloComponents.map((p) => p.id),
+    ...bergenComponents.map((p) => p.id),
+  ];
 
   await linkProductsToSalesChannelWorkflow(container).run({
     input: {
-      id: defaultSalesChannel[0].id,
-      add: createdProducts.map((p) => p.id),
+      id: defaultChannel.id,
+      add: allProductIds,
     },
   });
+  logger.info(`Linked ${allProductIds.length} products to sales channel`);
 
-  logger.info("Assigning images to variants...");
-  for (let i = 0; i < createdProducts.length; i++) {
-    const createdProduct = createdProducts[i];
-    const productConfig = productsToCreate[i];
-    const variantImageMap = productConfig.variantImageMap;
+  // ---------------------------------------------------------------------------
+  // 8. Create configurators via the configurator module service
+  // ---------------------------------------------------------------------------
+  logger.info("Creating configurators...");
 
-    const {
-      data: [productWithImages],
-    } = await query.graph({
-      entity: "product",
-      fields: ["id", "images.*", "variants.*"],
-      filters: { id: createdProduct.id },
-    });
+  const configuratorService = container.resolve("configurator") as any;
 
-    const urlToImageId: Record<string, string> = {};
-    for (const img of productWithImages.images || []) {
-      urlToImageId[(img as any).url] = (img as any).id;
-    }
+  // --- Oslo Configurator ---
+  const osloConfigurator = await configuratorService.createConfigurators({
+    name: "Oslo Wooden Office Chair Configurator",
+    handle: "oslo-chair-configurator",
+    description:
+      "Customize your Oslo chair with different bases, finishes, wood colors, and armrest options",
+    is_active: true,
+    product_id: osloProduct.id,
+  });
+  logger.info(`Created configurator: ${osloConfigurator.name}`);
 
-    for (const variant of productWithImages.variants || []) {
-      const variantTitle = (variant as any).title;
-      const colorMatch = variantTitle.match(/\/ ([A-Za-z-]+)$/);
-      const color = colorMatch ? colorMatch[1] : variantTitle;
+  // Oslo steps
+  const [
+    osloBaseStep,
+    osloFinishStep,
+    osloLeatherStep,
+    osloArmrestsStep,
+  ] = await configuratorService.createConfiguratorSteps([
+    {
+      configurator: { id: osloConfigurator.id },
+      title: "Choose Base Type",
+      description: "Select between stationary or wheels base",
+      order: 1,
+    },
+    {
+      configurator: { id: osloConfigurator.id },
+      title: "Choose Base Finish",
+      description: "Select the finish for your base",
+      order: 2,
+    },
+    {
+      configurator: { id: osloConfigurator.id },
+      title: "Choose Leather Color",
+      description: "Select your preferred leather color",
+      order: 3,
+    },
+    {
+      configurator: { id: osloConfigurator.id },
+      title: "Armrests",
+      description: "Choose with or without armrests",
+      order: 4,
+    },
+  ]);
 
-      const variantUrls = variantImageMap[color];
+  // Oslo options
+  await configuratorService.createConfiguratorOptions([
+    // Base Type
+    {
+      step: { id: osloBaseStep.id },
+      name: "Stationary Base",
+      description: "Classic stationary base for stable seating",
+      order: 1,
+      price_modifier: 75,
+      product_id: osloComponentByHandle["oslo-base-stationary"],
+    },
+    {
+      step: { id: osloBaseStep.id },
+      name: "Wheels Base",
+      description: "Mobile base with smooth-rolling casters",
+      order: 2,
+      price_modifier: 100,
+      product_id: osloComponentByHandle["oslo-base-wheels"],
+    },
+    // Base Finish
+    {
+      step: { id: osloFinishStep.id },
+      name: "Brushed Metal",
+      description: "Modern brushed metal finish with matte texture",
+      order: 1,
+      price_modifier: 50,
+      product_id: osloComponentByHandle["oslo-finish-brushed"],
+    },
+    {
+      step: { id: osloFinishStep.id },
+      name: "Chrome",
+      description: "Polished chrome finish for a premium look",
+      order: 2,
+      price_modifier: 75,
+      product_id: osloComponentByHandle["oslo-finish-chrome"],
+    },
+    // Leather Color
+    {
+      step: { id: osloLeatherStep.id },
+      name: "Black Leather",
+      description: "Sleek black leather upholstery for a classic executive look",
+      order: 1,
+      price_modifier: 100,
+      product_id: osloComponentByHandle["oslo-leather-black"],
+    },
+    {
+      step: { id: osloLeatherStep.id },
+      name: "Brown Leather",
+      description: "Rich brown leather upholstery with warm tones",
+      order: 2,
+      price_modifier: 150,
+      product_id: osloComponentByHandle["oslo-leather-brown"],
+    },
+    // Armrests
+    {
+      step: { id: osloArmrestsStep.id },
+      name: "Without Armrests",
+      description: "Minimalist design without armrests",
+      order: 1,
+      price_modifier: 0,
+      product_id: osloComponentByHandle["oslo-no-armrests"],
+    },
+    {
+      step: { id: osloArmrestsStep.id },
+      name: "With Armrests",
+      description: "Includes supportive armrests for comfort",
+      order: 2,
+      price_modifier: 125,
+      product_id: osloComponentByHandle["oslo-with-armrests"],
+    },
+  ]);
+  logger.info("Created Oslo configurator steps and options");
 
-      if (variantUrls && variantUrls.length > 0) {
-        const imageIds = variantUrls
-          .map((url: string) => urlToImageId[url])
-          .filter((id: string | undefined): id is string => !!id);
+  // --- Bergen Configurator ---
+  const bergenConfigurator = await configuratorService.createConfigurators({
+    name: "Bergen Executive Chair Configurator",
+    handle: "bergen-executive-chair",
+    description: "Configure your Bergen Executive Chair with premium options",
+    is_active: true,
+    product_id: bergenProduct.id,
+  });
+  logger.info(`Created configurator: ${bergenConfigurator.name}`);
 
-        if (imageIds.length > 0) {
-          await batchVariantImagesWorkflow(container).run({
-            input: {
-              variant_id: (variant as any).id,
-              add: imageIds,
-              remove: [],
-            },
-          });
-        }
-      }
-    }
-  }
+  // Bergen steps
+  const [
+    bergenBaseStep,
+    bergenLumbarStep,
+    bergenUpholsteryStep,
+    bergenArmrestsStep,
+  ] = await configuratorService.createConfiguratorSteps([
+    {
+      configurator: { id: bergenConfigurator.id },
+      title: "Choose Base",
+      description: "",
+      order: 1,
+    },
+    {
+      configurator: { id: bergenConfigurator.id },
+      title: "Add Lumbar Support",
+      description: "",
+      order: 2,
+    },
+    {
+      configurator: { id: bergenConfigurator.id },
+      title: "Choose Upholstery",
+      description: "",
+      order: 3,
+    },
+    {
+      configurator: { id: bergenConfigurator.id },
+      title: "Choose Armrests",
+      description: "",
+      order: 4,
+    },
+  ]);
 
-  logger.info(`Created ${createdProducts.length} products with variant images.`);
+  // Bergen options
+  await configuratorService.createConfiguratorOptions([
+    // Base
+    {
+      step: { id: bergenBaseStep.id },
+      name: "Height-Adjustable Base",
+      description: "Pneumatic height adjustment for ergonomic fit",
+      order: 0,
+      price_modifier: 70,
+      product_id: bergenComponentByHandle["bergen-height-adjustable-base"],
+    },
+    {
+      step: { id: bergenBaseStep.id },
+      name: "Fixed Base",
+      description: "Non-adjustable base at standard height",
+      order: 1,
+      price_modifier: 0,
+      product_id: bergenComponentByHandle["bergen-fixed-base"],
+    },
+    // Lumbar Support
+    {
+      step: { id: bergenLumbarStep.id },
+      name: "With Lumbar Support",
+      description: "Built-in lumbar support for proper posture",
+      order: 0,
+      price_modifier: 80,
+      product_id: bergenComponentByHandle["bergen-ergonomic-lumbar-support"],
+    },
+    {
+      step: { id: bergenLumbarStep.id },
+      name: "Without Lumbar Support",
+      description: "Standard back without additional lumbar cushion",
+      order: 1,
+      price_modifier: 0,
+      product_id: bergenComponentByHandle["bergen-without-lumbar-support"],
+    },
+    // Upholstery
+    {
+      step: { id: bergenUpholsteryStep.id },
+      name: "Premium Fabric Upholstery",
+      description: "Tightly woven premium fabric for a refined, professional look",
+      order: 0,
+      price_modifier: 150,
+      product_id: bergenComponentByHandle["bergen-premium-fabric-upholstery"],
+    },
+    {
+      step: { id: bergenUpholsteryStep.id },
+      name: "Performance Fabric Upholstery",
+      description: "Durable, breathable performance fabric for all-day comfort",
+      order: 1,
+      price_modifier: 120,
+      product_id: bergenComponentByHandle["bergen-performance-fabric-upholstery"],
+    },
+    // Armrests
+    {
+      step: { id: bergenArmrestsStep.id },
+      name: "Executive Armrests",
+      description: "Premium padded armrests with fabric upholstery",
+      order: 0,
+      price_modifier: 60,
+      product_id: bergenComponentByHandle["bergen-executive-armrests"],
+    },
+    {
+      step: { id: bergenArmrestsStep.id },
+      name: "Adjustable Armrests",
+      description: "Fully adjustable armrests for custom positioning",
+      order: 1,
+      price_modifier: 75,
+      product_id: bergenComponentByHandle["bergen-adjustable-armrests"],
+    },
+    {
+      step: { id: bergenArmrestsStep.id },
+      name: "No Armrests",
+      description: "Sleek armrest-free design for maximum mobility",
+      order: 2,
+      price_modifier: 0,
+      product_id: bergenComponentByHandle["bergen-no-armrests"],
+    },
+  ]);
+  logger.info("Created Bergen configurator steps and options");
+
+  // ---------------------------------------------------------------------------
+  // Done
+  // ---------------------------------------------------------------------------
+  logger.info("=== Migration complete ===");
+  logger.info(`Products created: ${allProductIds.length}`);
+  logger.info(`Configurators created: 2 (Oslo, Bergen)`);
+  logger.info(
+    `Oslo configurator steps: 4 (Base Type, Base Finish, Leather Color, Armrests)`
+  );
+  logger.info(
+    `Bergen configurator steps: 4 (Base, Lumbar Support, Upholstery, Armrests)`
+  );
+
+
   logger.info("Initial seed complete.");
 }
