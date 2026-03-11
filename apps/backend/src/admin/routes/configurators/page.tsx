@@ -18,7 +18,7 @@ const ConfiguratorsPage = () => {
 
   const loadProducts = async () => {
     try {
-      const response = await sdk.client.fetch("/admin/products?limit=100")
+      const response = await sdk.client.fetch("/admin/products?limit=100") as any
       // Filter out component products - only show base products
       const baseProducts = (response.products || []).filter(
         (p: any) => !p.metadata?.is_component

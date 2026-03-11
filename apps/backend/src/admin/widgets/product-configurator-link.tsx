@@ -13,7 +13,7 @@ const ProductConfiguratorLinkWidget = ({ data }: { data: AdminProduct }) => {
     const loadConfigurator = async () => {
       try {
         setIsLoading(true)
-        const response = await sdk.client.fetch("/admin/configurators")
+        const response = await sdk.client.fetch("/admin/configurators") as any
         const config = response.configurators?.find(
           (c: any) => c.product_id === data.id
         )

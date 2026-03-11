@@ -35,7 +35,8 @@
     "@medusajs/types": "2.13.1",
     "@medusajs/ui": "4.1.0",
     "@tanstack/react-query": "5.64.2",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "zod": "3.22.4"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.13.1",

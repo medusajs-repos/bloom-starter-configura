@@ -1,6 +1,18 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, QueryContext } from "@medusajs/framework/utils"
 
+type ProductWithCalculatedPrice = {
+  id: string
+  title: string
+  handle: string
+  variants: Array<{
+    id: string
+    calculated_price?: {
+      calculated_amount: number
+    }
+  }>
+}
+
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const query = req.scope.resolve("query")
   const { product_id, currency_code } = req.query
@@ -53,7 +65,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const configurator = configurators[0]
 
   // Get the base product price
-  let basePrice = configurator.base_price || 0
+  let basePrice = (configurator as any).base_price || 0
   if (product_id) {
     const { data: baseProducts } = await query.graph({
       entity: "product",
@@ -66,19 +78,19 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
           }),
         },
       },
-    })
+    }) as { data: ProductWithCalculatedPrice[] }
     if (baseProducts?.[0]?.variants?.[0]?.calculated_price) {
       basePrice = baseProducts[0].variants[0].calculated_price.calculated_amount || 0
     }
   }
 
   // Fetch component product details for all options
-  const componentProductIds = configurator.steps
+  const componentProductIds = (configurator as any).steps
     ?.flatMap((step: any) => step.options || [])
     .map((option: any) => option.product_id)
     .filter(Boolean)
 
-  let componentProducts = []
+  let componentProducts: ProductWithCalculatedPrice[] = []
   if (componentProductIds && componentProductIds.length > 0) {
     const { data: products } = await query.graph({
       entity: "product",
@@ -93,7 +105,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
           }),
         },
       },
-    })
+    }) as { data: ProductWithCalculatedPrice[] }
     componentProducts = products || []
   }
 
@@ -101,14 +113,13 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const configuratorWithPrices = {
     ...configurator,
     base_price: basePrice,
-    steps: configurator.steps?.map((step: any) => ({
+    steps: (configurator as any).steps?.map((step: any) => ({
       ...step,
       options: step.options?.map((option: any) => {
         const componentProduct = componentProducts.find(
-          (p: any) => p.id === option.product_id
+          (p) => p.id === option.product_id
         )
         
-        // Use the component product price directly (not as a modifier)
         let price = 0
         
         if (componentProduct?.variants?.[0]?.calculated_price) {

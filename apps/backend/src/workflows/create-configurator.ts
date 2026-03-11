@@ -26,6 +26,16 @@ type CreateConfiguratorInput = {
   }>
 }
 
+type StepsAndOptions = {
+  steps: any[]
+  options: any[]
+}
+
+type CompensationData = {
+  stepIds: string[]
+  optionIds: string[]
+}
+
 const createConfiguratorStep = createStep(
   "create-configurator",
   async (input: CreateConfiguratorInput, { container }) => {
@@ -41,7 +51,7 @@ const createConfiguratorStep = createStep(
 
     return new StepResponse(configurator, configurator.id)
   },
-  async (configuratorId, { container }) => {
+  async (configuratorId: string, { container }) => {
     if (!configuratorId) return
     const configuratorService = container.resolve("configurator")
     await configuratorService.deleteConfigurators(configuratorId)
@@ -56,15 +66,15 @@ const createConfiguratorStepsStep = createStep(
       steps: CreateConfiguratorInput["steps"]
     },
     { container }
-  ) => {
+  ): Promise<StepResponse<StepsAndOptions, CompensationData>> => {
     if (!input.steps || input.steps.length === 0) {
-      return new StepResponse([], [])
+      return new StepResponse({ steps: [], options: [] }, { stepIds: [], optionIds: [] })
     }
 
     const configuratorService = container.resolve("configurator")
 
     const stepsData = input.steps.map((step) => ({
-      configurator: { id: input.configurator_id },
+      configurator_id: input.configurator_id,
       title: step.title,
       description: step.description,
       order: step.order,
@@ -77,7 +87,7 @@ const createConfiguratorStepsStep = createStep(
 
     const optionsData = input.steps.flatMap((step, stepIndex) =>
       step.options.map((option) => ({
-        step: { id: createdSteps[stepIndex].id },
+        step_id: createdSteps[stepIndex].id,
         name: option.name,
         description: option.description,
         image_url: option.image_url,
@@ -92,10 +102,11 @@ const createConfiguratorStepsStep = createStep(
 
     return new StepResponse(
       { steps: createdSteps, options: createdOptions },
-      { stepIds: createdSteps.map((s) => s.id), optionIds: createdOptions.map((o) => o.id) }
+      { stepIds: createdSteps.map((s: any) => s.id), optionIds: createdOptions.map((o: any) => o.id) }
     )
   },
-  async (data, { container }) => {
+  async (data: CompensationData, { container }) => {
+    if (!data) return
     const configuratorService = container.resolve("configurator")
     if (data.optionIds.length > 0) {
       await configuratorService.deleteConfiguratorOptions(data.optionIds)
@@ -118,8 +129,7 @@ export const createConfiguratorWorkflow = createWorkflow(
 
     return new WorkflowResponse({
       configurator,
-      steps: stepsAndOptions.steps,
-      options: stepsAndOptions.options,
+      stepsAndOptions,
     })
   }
 )
