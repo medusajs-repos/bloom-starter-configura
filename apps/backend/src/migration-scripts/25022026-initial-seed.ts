@@ -64,7 +64,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     defaultSalesChannel = salesChannelResult;
   }
 
-  const defaultChannel = defaultSalesChannel
+  const defaultChannel = defaultSalesChannel[0]
 
   function buildPrices(amounts: Record<string, number>) {
     return Object.entries(amounts).map(([currency_code, amount]) => ({
@@ -387,13 +387,6 @@ export default async function initialSeed({ container }: ExecArgs) {
   // 5. Create Oslo component products (draft, is_component)
   // ---------------------------------------------------------------------------
   logger.info("Creating Oslo component products...");
-
-  function buildPrices(amounts: Record<string, number>) {
-    return Object.entries(amounts).map(([currency_code, amount]) => ({
-      currency_code,
-      amount,
-    }));
-  }
 
   const { result: osloComponents } = await createProductsWorkflow(
     container
