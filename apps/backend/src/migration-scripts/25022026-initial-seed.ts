@@ -73,6 +73,16 @@ export default async function initialSeed({ container }: ExecArgs) {
     }));
   }
 
+  const { data: pricePreferences } = await query.graph({
+    entity: "price_preference",
+    fields: ["id"],
+  });
+
+  if (pricePreferences.length > 0) {
+    const ids = pricePreferences.map((pp: { id: string }) => pp.id);
+    await container.resolve(Modules.PRICING).deletePricePreferences(ids);
+  }
+
   await updateStoresWorkflow(container).run({
     input: {
       selector: { id: store.id },
