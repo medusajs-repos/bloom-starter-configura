@@ -753,25 +753,25 @@ export default async function initialSeed({ container }: ExecArgs) {
     osloArmrestsStep,
   ] = await configuratorService.createConfiguratorSteps([
     {
-      configurator: { id: osloConfigurator.id },
+      configurator_id: osloConfigurator.id,
       title: "Choose Base Type",
       description: "Select between stationary or wheels base",
       order: 1,
     },
     {
-      configurator: { id: osloConfigurator.id },
+      configurator_id: osloConfigurator.id,
       title: "Choose Base Finish",
       description: "Select the finish for your base",
       order: 2,
     },
     {
-      configurator: { id: osloConfigurator.id },
+      configurator_id: osloConfigurator.id,
       title: "Choose Leather Color",
       description: "Select your preferred leather color",
       order: 3,
     },
     {
-      configurator: { id: osloConfigurator.id },
+      configurator_id: osloConfigurator.id,
       title: "Armrests",
       description: "Choose with or without armrests",
       order: 4,
@@ -782,7 +782,7 @@ export default async function initialSeed({ container }: ExecArgs) {
   await configuratorService.createConfiguratorOptions([
     // Base Type
     {
-      step: { id: osloBaseStep.id },
+      step_id: osloBaseStep.id,
       name: "Stationary Base",
       description: "Classic stationary base for stable seating",
       order: 1,
@@ -790,7 +790,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: osloComponentByHandle["oslo-base-stationary"],
     },
     {
-      step: { id: osloBaseStep.id },
+      step_id: osloBaseStep.id,
       name: "Wheels Base",
       description: "Mobile base with smooth-rolling casters",
       order: 2,
@@ -799,7 +799,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     },
     // Base Finish
     {
-      step: { id: osloFinishStep.id },
+      step_id: osloFinishStep.id,
       name: "Brushed Metal",
       description: "Modern brushed metal finish with matte texture",
       order: 1,
@@ -807,7 +807,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: osloComponentByHandle["oslo-finish-brushed"],
     },
     {
-      step: { id: osloFinishStep.id },
+      step_id: osloFinishStep.id,
       name: "Chrome",
       description: "Polished chrome finish for a premium look",
       order: 2,
@@ -816,7 +816,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     },
     // Leather Color
     {
-      step: { id: osloLeatherStep.id },
+      step_id: osloLeatherStep.id,
       name: "Black Leather",
       description: "Sleek black leather upholstery for a classic executive look",
       order: 1,
@@ -824,7 +824,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: osloComponentByHandle["oslo-leather-black"],
     },
     {
-      step: { id: osloLeatherStep.id },
+      step_id: osloLeatherStep.id,
       name: "Brown Leather",
       description: "Rich brown leather upholstery with warm tones",
       order: 2,
@@ -833,7 +833,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     },
     // Armrests
     {
-      step: { id: osloArmrestsStep.id },
+      step_id: osloArmrestsStep.id,
       name: "Without Armrests",
       description: "Minimalist design without armrests",
       order: 1,
@@ -841,7 +841,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: osloComponentByHandle["oslo-no-armrests"],
     },
     {
-      step: { id: osloArmrestsStep.id },
+      step_id: osloArmrestsStep.id,
       name: "With Armrests",
       description: "Includes supportive armrests for comfort",
       order: 2,
@@ -869,25 +869,25 @@ export default async function initialSeed({ container }: ExecArgs) {
     bergenArmrestsStep,
   ] = await configuratorService.createConfiguratorSteps([
     {
-      configurator: { id: bergenConfigurator.id },
+      configurator_id: bergenConfigurator.id,
       title: "Choose Base",
       description: "",
       order: 1,
     },
     {
-      configurator: { id: bergenConfigurator.id },
+      configurator_id: bergenConfigurator.id,
       title: "Add Lumbar Support",
       description: "",
       order: 2,
     },
     {
-      configurator: { id: bergenConfigurator.id },
+      configurator_id: bergenConfigurator.id,
       title: "Choose Upholstery",
       description: "",
       order: 3,
     },
     {
-      configurator: { id: bergenConfigurator.id },
+      configurator_id: bergenConfigurator.id,
       title: "Choose Armrests",
       description: "",
       order: 4,
@@ -898,7 +898,7 @@ export default async function initialSeed({ container }: ExecArgs) {
   await configuratorService.createConfiguratorOptions([
     // Base
     {
-      step: { id: bergenBaseStep.id },
+      step_id: bergenBaseStep.id,
       name: "Height-Adjustable Base",
       description: "Pneumatic height adjustment for ergonomic fit",
       order: 0,
@@ -906,7 +906,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: bergenComponentByHandle["bergen-height-adjustable-base"],
     },
     {
-      step: { id: bergenBaseStep.id },
+      step_id: bergenBaseStep.id,
       name: "Fixed Base",
       description: "Non-adjustable base at standard height",
       order: 1,
@@ -915,7 +915,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     },
     // Lumbar Support
     {
-      step: { id: bergenLumbarStep.id },
+      step_id: bergenLumbarStep.id,
       name: "With Lumbar Support",
       description: "Built-in lumbar support for proper posture",
       order: 0,
@@ -923,7 +923,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: bergenComponentByHandle["bergen-ergonomic-lumbar-support"],
     },
     {
-      step: { id: bergenLumbarStep.id },
+      step_id: bergenLumbarStep.id,
       name: "Without Lumbar Support",
       description: "Standard back without additional lumbar cushion",
       order: 1,
@@ -932,7 +932,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     },
     // Upholstery
     {
-      step: { id: bergenUpholsteryStep.id },
+      step_id: bergenUpholsteryStep.id,
       name: "Premium Fabric Upholstery",
       description: "Tightly woven premium fabric for a refined, professional look",
       order: 0,
@@ -940,7 +940,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: bergenComponentByHandle["bergen-premium-fabric-upholstery"],
     },
     {
-      step: { id: bergenUpholsteryStep.id },
+      step_id: bergenUpholsteryStep.id,
       name: "Performance Fabric Upholstery",
       description: "Durable, breathable performance fabric for all-day comfort",
       order: 1,
@@ -949,7 +949,7 @@ export default async function initialSeed({ container }: ExecArgs) {
     },
     // Armrests
     {
-      step: { id: bergenArmrestsStep.id },
+      step_id: bergenArmrestsStep.id,
       name: "Executive Armrests",
       description: "Premium padded armrests with fabric upholstery",
       order: 0,
@@ -957,7 +957,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: bergenComponentByHandle["bergen-executive-armrests"],
     },
     {
-      step: { id: bergenArmrestsStep.id },
+      step_id: bergenArmrestsStep.id,
       name: "Adjustable Armrests",
       description: "Fully adjustable armrests for custom positioning",
       order: 1,
@@ -965,7 +965,7 @@ export default async function initialSeed({ container }: ExecArgs) {
       product_id: bergenComponentByHandle["bergen-adjustable-armrests"],
     },
     {
-      step: { id: bergenArmrestsStep.id },
+      step_id: bergenArmrestsStep.id,
       name: "No Armrests",
       description: "Sleek armrest-free design for maximum mobility",
       order: 2,
