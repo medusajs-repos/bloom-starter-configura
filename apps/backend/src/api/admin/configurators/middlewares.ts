@@ -1,5 +1,5 @@
 import { MiddlewareRoute, validateAndTransformBody } from "@medusajs/framework"
-import { z } from "zod"
+import { z } from "@medusajs/framework/zod"
 
 const ConfiguratorOptionSchema = z.object({
   name: z.string(),
