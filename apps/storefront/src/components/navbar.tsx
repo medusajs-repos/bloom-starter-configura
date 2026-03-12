@@ -51,12 +51,12 @@ export default function Navbar() {
               Inspiration
             </Link>
             <Link
-              to="/$countryCode/store"
+              to="/$countryCode/configurator"
               params={{ countryCode: countryCode || 'gb' }}
               className="text-xs tracking-widest uppercase text-[#0a0a0a] hover:text-[#737373] transition-colors font-medium"
               onMouseEnter={() => setActiveMenu(null)}
             >
-              Collections
+              Configurator
             </Link>
           </nav>
 
