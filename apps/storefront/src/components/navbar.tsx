@@ -27,7 +27,7 @@ export default function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 bg-white border-b border-[#e9e9e9]"
+      className="sticky top-0 z-50 bg-white border-b border-[#e5e5e5]"
       onMouseLeave={() => setActiveMenu(null)}
     >
       <div className="w-full px-6 md:px-10 lg:px-14">
