@@ -94,49 +94,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Product grid — 2 image tiles */}
-      <section className="px-6 md:px-10 lg:px-14 pt-12 md:pt-16 pb-6 md:pb-8">
-        <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
-          {products.slice(0, 2).map((product) => {
-            const cheapestVariant = product.variants
-              ?.filter((v: any) => v.calculated_price?.calculated_amount != null)
-              .sort((a: any, b: any) => a.calculated_price.calculated_amount - b.calculated_price.calculated_amount)[0]
-            const priceAmount = cheapestVariant?.calculated_price?.calculated_amount
-            const currencyCode = cheapestVariant?.calculated_price?.currency_code?.toUpperCase() ?? "GBP"
-            const priceLabel = priceAmount != null
-              ? `${new Intl.NumberFormat("en-GB", { style: "currency", currency: currencyCode, maximumFractionDigits: 0 }).format(priceAmount)}`
-              : null
-
-            return (
-              <Link
-                key={product.id}
-                to="/$countryCode/products/$handle"
-                params={{ countryCode, handle: product.handle! }}
-                className="group relative overflow-hidden"
-              >
-                <div className="aspect-square overflow-hidden">
-                  {product.thumbnail && (
-                    <img
-                      src={product.thumbnail}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
-                    />
-                  )}
-                </div>
-                <div className="mt-3 flex items-start justify-between">
-                  <div className="min-w-0">
-                    <span className="text-sm text-[#0a0a0a] font-medium truncate block">{product.title}</span>
-                    {priceLabel && <span className="text-xs text-[#737373]">{priceLabel}</span>}
-                  </div>
-                  <svg className="flex-shrink-0 ml-2 mt-0.5 text-[#a3a3a3] group-hover:text-[#0a0a0a] transition-colors" width="13" height="13" viewBox="0 0 14 14" fill="none">
-                    <path d="M2 7H12M12 7L8 3M12 7L8 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      </section>
 
       {/* Two-up editorial */}
       <section className="px-6 md:px-10 lg:px-14 py-4 md:py-6">

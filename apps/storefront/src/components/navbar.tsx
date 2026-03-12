@@ -51,12 +51,12 @@ export default function Navbar() {
               Inspiration
             </Link>
             <Link
-              to="/$countryCode/store"
-              params={{ countryCode: countryCode || 'gb' }}
+              to="/$countryCode/products/$handle/configure"
+              params={{ countryCode: countryCode || 'gb', handle: 'oslo-executive-office-chair' }}
               className="text-xs tracking-widest uppercase text-[#0a0a0a] hover:text-[#737373] transition-colors font-medium"
               onMouseEnter={() => setActiveMenu(null)}
             >
-              Collections
+              Configurator
             </Link>
           </nav>
 
