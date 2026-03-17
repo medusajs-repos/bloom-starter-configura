@@ -4,11 +4,12 @@ import { sdk } from "@/lib/utils/sdk"
 
 export const Route = createFileRoute("/$countryCode/register")({
   component: RegisterPage,
-  beforeLoad: async () => {
+  beforeLoad: async ({ params }) => {
     try {
       await sdk.store.customer.retrieve()
-      throw redirect({ to: "/$countryCode/account" })
+      throw redirect({ to: "/$countryCode/account", params })
     } catch (error) {
+      if (error instanceof Error && 'to' in (error as any)) throw error
       // Not logged in, continue to register page
     }
   },

@@ -67,7 +67,8 @@ const Checkout = () => {
   const goToStep = useCallback(
     (stepKey: CheckoutStepKey) => {
       navigate({
-        to: `${location.pathname}?step=${stepKey}`,
+        to: "/$countryCode/checkout" as string,
+        search: { step: stepKey },
         replace: true,
       })
     },

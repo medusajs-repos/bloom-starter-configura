@@ -6,13 +6,14 @@ import {
   useNavigate,
 } from "@tanstack/react-router"
 import { sdk } from "@/lib/utils/sdk"
+import { sanitize } from "@/lib/utils/sanitize"
 
 export const Route = createFileRoute("/$countryCode/account")({
   component: AccountLayout,
   beforeLoad: async ({ params }) => {
     try {
       const { customer } = await sdk.store.customer.retrieve()
-      return { customer }
+      return sanitize({ customer })
     } catch (error) {
       throw redirect({ to: "/$countryCode/login", params })
     }
@@ -29,11 +30,6 @@ function AccountLayout() {
     navigate({ to: "/$countryCode", params: { countryCode } })
   }
 
-  const navItems = [
-    { to: "/$countryCode/account", label: "Profile" },
-    { to: "/$countryCode/account/orders", label: "Orders" },
-  ]
-
   return (
     <div className="min-h-[calc(100vh-200px)] px-4 py-12 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -45,17 +41,22 @@ function AccountLayout() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <nav className="space-y-2">
-          {navItems.map((item) => (
             <Link
-              key={item.to}
-              to={item.to}
+              to="/$countryCode/account"
               params={{ countryCode }}
               className="block px-4 py-2 rounded hover:bg-gray-100 transition-colors"
               activeProps={{ className: "bg-gray-100 font-medium" }}
             >
-              {item.label}
+              Profile
             </Link>
-          ))}
+            <Link
+              to="/$countryCode/account/orders"
+              params={{ countryCode }}
+              className="block px-4 py-2 rounded hover:bg-gray-100 transition-colors"
+              activeProps={{ className: "bg-gray-100 font-medium" }}
+            >
+              Orders
+            </Link>
           <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-2 rounded hover:bg-gray-100 transition-colors text-red-600"

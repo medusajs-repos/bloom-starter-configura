@@ -1,3 +1,4 @@
+import { sanitize } from "@/lib/utils/sanitize"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { retrieveProduct } from "../../lib/data/products"
 import { ProductConfigurator, Configurator } from "@/components/product-configurator"
@@ -44,12 +45,12 @@ export const Route = createFileRoute(
       },
     })
 
-    return {
+    return sanitize({
       product,
       region,
       countryCode: params.countryCode,
       configurator: configuratorData,
-    }
+    })
   },
   component: ProductConfiguratorPage,
 })

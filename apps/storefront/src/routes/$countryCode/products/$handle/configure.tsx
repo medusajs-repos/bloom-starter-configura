@@ -1,3 +1,4 @@
+import { sanitize } from "@/lib/utils/sanitize"
 import { retrieveProduct } from "@/lib/data/products"
 import { getRegion } from "@/lib/data/regions"
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router"
@@ -48,12 +49,12 @@ export const Route = createFileRoute(
       },
     })
 
-    return {
+    return sanitize({
       countryCode,
       region,
       product,
       configurator: configuratorData,
-    }
+    })
   },
   component: ConfigurePage,
 })
@@ -84,8 +85,8 @@ function ConfigurePage() {
 
       // Build configuration summary for metadata
       const configurationSummary = Object.entries(configuration).map(([stepId, optionId]) => {
-        const step = configurator.steps.find((s) => s.id === stepId)
-        const option = step?.options.find((o) => o.id === optionId)
+        const step = configurator.steps.find((s: any) => s.id === stepId)
+        const option = step?.options.find((o: any) => o.id === optionId)
         return {
           step_name: step?.name,
           option_name: option?.name,
@@ -94,7 +95,7 @@ function ConfigurePage() {
         }
       })
 
-      await addToCart.mutateAsync({
+      await (addToCart as any).mutateAsync({
         variant_id: variant.id,
         quantity: 1,
         country_code: region.countries[0]?.iso_2 || countryCode,
@@ -106,7 +107,7 @@ function ConfigurePage() {
           configuration,
           configuration_summary: configurationSummary,
           total_configuration_price: totalPrice,
-        } as any,
+        },
       })
 
       // Navigate back to product page
