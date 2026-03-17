@@ -6,13 +6,14 @@ import {
   useNavigate,
 } from "@tanstack/react-router"
 import { sdk } from "@/lib/utils/sdk"
+import { sanitize } from "@/lib/utils/sanitize"
 
 export const Route = createFileRoute("/$countryCode/account")({
   component: AccountLayout,
   beforeLoad: async ({ params }) => {
     try {
       const { customer } = await sdk.store.customer.retrieve()
-      return { customer }
+      return sanitize({ customer })
     } catch (error) {
       throw redirect({ to: "/$countryCode/login", params })
     }
@@ -30,8 +31,8 @@ function AccountLayout() {
   }
 
   const navItems = [
-    { to: "/$countryCode/account", label: "Profile" },
-    { to: "/$countryCode/account/orders", label: "Orders" },
+    { to: "/$countryCode/account" as const, label: "Profile" },
+    { to: "/$countryCode/account/orders" as const, label: "Orders" },
   ]
 
   return (

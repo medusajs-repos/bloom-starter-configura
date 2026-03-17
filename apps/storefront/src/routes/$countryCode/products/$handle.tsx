@@ -3,6 +3,7 @@ import { getRegion } from "@/lib/data/regions"
 import { queryKeys } from "@/lib/utils/query-keys"
 import ProductDetails from "@/pages/product"
 import { HttpTypes } from "@medusajs/types"
+import { sanitize } from "@/lib/utils/sanitize"
 import { createFileRoute, notFound } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/$countryCode/products/$handle")({
@@ -64,11 +65,11 @@ export const Route = createFileRoute("/$countryCode/products/$handle")({
       },
     })
 
-    return {
+    return sanitize({
       countryCode,
       region,
       product: product as HttpTypes.StoreProduct,
-    }
+    })
   },
   head: ({ loaderData }) => {
     const { product, region } = loaderData || {}

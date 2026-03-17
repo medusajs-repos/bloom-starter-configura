@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import { sdk } from "@/lib/utils/sdk"
+import { sanitize } from "@/lib/utils/sanitize"
 import { formatPrice } from "@/lib/utils/price"
 import { ArrowLeft } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/$countryCode/account/orders/$orderId")({
     const { order } = await sdk.store.order.retrieve(params.orderId, {
       fields: "*items,*items.variant,*items.product,*shipping_address,*billing_address,*fulfillments",
     })
-    return { order }
+    return sanitize({ order })
   },
 })
 
