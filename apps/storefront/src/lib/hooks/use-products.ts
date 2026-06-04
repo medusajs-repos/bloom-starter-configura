@@ -6,12 +6,22 @@ import { sdk } from "@/lib/utils/sdk"
 export const useProducts = ({
   query_params,
   region_id,
+  optionValueIds,
 }: {
   query_params?: HttpTypes.StoreProductListParams
   region_id?: string
+  optionValueIds?: string[]
 } = {}) => {
+  const dedupedOptionValueIds =
+    optionValueIds && optionValueIds.length > 0
+      ? Array.from(new Set(optionValueIds))
+      : undefined
+
   return useInfiniteQuery({
-    queryKey: queryKeys.products.list(query_params, region_id),
+    queryKey: [
+      ...queryKeys.products.list(query_params, region_id),
+      dedupedOptionValueIds,
+    ],
     queryFn: async ({ pageParam }) => {
       const limit = query_params?.limit || 12
       const _page_param = Math.max(pageParam, 1)
@@ -23,7 +33,10 @@ export const useProducts = ({
         region_id,
         fields: "id,title,handle,thumbnail,metadata,*images,*variants,*variants.calculated_price,*variants.images,*variants.thumbnail,*variants.options",
         ...query_params,
-      })
+        ...(dedupedOptionValueIds
+          ? { option_value_id: dedupedOptionValueIds as unknown as string }
+          : {}),
+      } as HttpTypes.StoreProductListParams)
 
       // Filter out component products
       const filteredProducts = response.products.filter(
