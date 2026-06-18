@@ -1,10 +1,11 @@
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
 
 export const GET = async (
   req: MedusaRequest,
   res: MedusaResponse
 ): Promise<void> => {
-  const query = req.scope.resolve("query");
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
 
   try {
     // Query all order line items with product info

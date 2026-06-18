@@ -1,12 +1,12 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError } from "@medusajs/framework/utils"
+import { MedusaError, ContainerRegistrationKeys, QueryContext } from "@medusajs/framework/utils"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const pricingContext = {
     currency_code: req.query?.currency_code as string || "gbp",
     region_id: req.query?.region_id as string,
   }
-  const query = req.scope.resolve("query")
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const { handle } = req.params
 
   const { data: configurators } = await query.graph({
@@ -58,11 +58,11 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
           "variants.calculated_price.*"
         ],
         filters: { id: productIds },
-        context: {
+        context: QueryContext({
           variants: {
             calculated_price: pricingContext
           }
-        }
+        })
       })
       
       productsMap = (products || []).reduce((acc: any, p: any) => {

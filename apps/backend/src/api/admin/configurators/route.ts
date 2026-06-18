@@ -1,9 +1,10 @@
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { createConfiguratorWorkflow } from "../../../workflows/create-configurator"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const configuratorService = req.scope.resolve("configurator")
-  const query = req.scope.resolve("query")
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
   const { data: configurators } = await query.graph({
     entity: "configurator",
