@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MedusaError, QueryContext } from "@medusajs/framework/utils"
+import { MedusaError, QueryContext, ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 type ProductWithCalculatedPrice = {
   id: string
@@ -14,7 +14,7 @@ type ProductWithCalculatedPrice = {
 }
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const query = req.scope.resolve("query")
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const { product_id, currency_code } = req.query
 
   if (!product_id) {
@@ -71,13 +71,13 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       entity: "product",
       fields: ["id", "variants.calculated_price.calculated_amount"],
       filters: { id: product_id as string },
-      context: {
+      context: QueryContext({
         variants: {
           calculated_price: QueryContext({
             currency_code: currency_code as string,
           }),
         },
-      },
+      }),
     }) as { data: ProductWithCalculatedPrice[] }
     if (baseProducts?.[0]?.variants?.[0]?.calculated_price) {
       basePrice = baseProducts[0].variants[0].calculated_price.calculated_amount || 0
@@ -98,13 +98,13 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       filters: {
         id: componentProductIds,
       },
-      context: {
+      context: QueryContext({
         variants: {
           calculated_price: QueryContext({
             currency_code: currency_code as string,
           }),
         },
-      },
+      }),
     }) as { data: ProductWithCalculatedPrice[] }
     componentProducts = products || []
   }
