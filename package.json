@@ -12,8 +12,6 @@
     "storefront:dev": "turbo dev --filter=storefront"
   },
   "devDependencies": {
-    "eslint": "^9.39.4",
-    "@medusajs/eslint-plugin": "2.16.0",
     "turbo": "^2.0.14",
     "prettier": "^3.2.5"
   },

@@ -1,4 +1,3 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { addToCartWorkflow } from "@medusajs/medusa/core-flows"
 
@@ -23,7 +22,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   }
 
   // Calculate total price from configuration
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+  const query = req.scope.resolve("query")
   let totalPrice = 0
   const componentSkus: string[] = []
   
