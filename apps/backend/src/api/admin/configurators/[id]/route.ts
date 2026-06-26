@@ -2,7 +2,7 @@ import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MedusaError, ContainerRegistrationKeys } from "@medusajs/framework/utils"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const query = req.scope.resolve("query")
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const { id } = req.params
 
   const { data: configurators } = await query.graph({
@@ -46,7 +46,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
 export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
   const configuratorService = req.scope.resolve("configurator")
-  const query = req.scope.resolve("query")
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const { id } = req.params
 
   try {
