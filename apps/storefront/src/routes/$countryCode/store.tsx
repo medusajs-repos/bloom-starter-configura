@@ -4,11 +4,34 @@ import Store from "@/pages/store"
 import { listProducts, getBestSellingProductIds } from "@/lib/data/products"
 import { HttpTypes } from "@medusajs/types"
 import { sanitize } from "@/lib/utils/sanitize"
+import {
+  OPTION_VALUE_QUERY_KEY,
+  parseOptionValueIds,
+} from "@/lib/utils/option-value-ids"
 
 export const Route = createFileRoute("/$countryCode/store")({
-  loader: async ({ params, context }) => {
+  validateSearch: (search: Record<string, unknown>) => {
+    const raw = search?.[OPTION_VALUE_QUERY_KEY]
+    const normalized =
+      Array.isArray(raw)
+        ? raw.filter((v): v is string => typeof v === "string")
+        : typeof raw === "string"
+          ? raw
+          : undefined
+    const optionValueIds = parseOptionValueIds(
+      normalized !== undefined ? { [OPTION_VALUE_QUERY_KEY]: normalized } : {}
+    )
+    return {
+      [OPTION_VALUE_QUERY_KEY]: optionValueIds.length > 0 ? optionValueIds : undefined,
+    } as { [OPTION_VALUE_QUERY_KEY]?: string[] }
+  },
+  loaderDeps: ({ search }) => ({
+    optionValueIds: search?.[OPTION_VALUE_QUERY_KEY] ?? [],
+  }),
+  loader: async ({ params, context, deps }) => {
     const { countryCode } = params
     const { queryClient } = context
+    const optionValueIds = deps?.optionValueIds ?? []
 
     const region = await queryClient.ensureQueryData({
       queryKey: ["region", countryCode],
@@ -20,13 +43,14 @@ export const Route = createFileRoute("/$countryCode/store")({
     }
 
     const { products } = await queryClient.ensureQueryData({
-      queryKey: ["products", { region_id: region.id }],
+      queryKey: ["products", { region_id: region.id }, optionValueIds],
       queryFn: () => listProducts({
         query_params: {
           limit: 100, // Reduce limit for SSR performance
           order: "-created_at"
         },
         region_id: region.id,
+        optionValueIds,
       }),
     })
 
@@ -38,6 +62,7 @@ export const Route = createFileRoute("/$countryCode/store")({
       region,
       products: products as HttpTypes.StoreProduct[],
       bestSellingIds,
+      optionValueIds,
     })
   },
   head: ({ loaderData }) => {

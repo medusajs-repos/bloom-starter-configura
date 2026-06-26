@@ -53,10 +53,12 @@ export const listProducts = async ({
   page_param = 1,
   query_params,
   region_id,
+  optionValueIds,
 }: {
   page_param?: number;
   query_params?: HttpTypes.StoreProductListParams;
   region_id?: string;
+  optionValueIds?: string[];
 }): Promise<{
   products: HttpTypes.StoreProduct[];
   count: number;
@@ -66,12 +68,28 @@ export const listProducts = async ({
   const _page_param = Math.max(page_param, 1)
   const offset = _page_param === 1 ? 0 : (_page_param - 1) * limit
 
+  const dedupedOptionValueIds = optionValueIds && optionValueIds.length > 0
+    ? Array.from(new Set(optionValueIds))
+    : undefined
+
+  // Ensure variant options are included so the storefront can filter / display them
+  const baseFields = query_params?.fields
+  const fieldsWithOptions = baseFields
+    ? (baseFields.includes("*variants.options")
+      ? baseFields
+      : `${baseFields}, *variants.options`)
+    : "*variants.options"
+
   const response = await sdk.store.product.list({
     limit,
     offset,
     region_id,
     ...query_params,
-  })
+    fields: fieldsWithOptions,
+    ...(dedupedOptionValueIds
+      ? { option_value_id: dedupedOptionValueIds as unknown as string }
+      : {}),
+  } as HttpTypes.StoreProductListParams)
 
   // Filter out component products (products with is_component metadata)
   const filteredProducts = response.products.filter(
