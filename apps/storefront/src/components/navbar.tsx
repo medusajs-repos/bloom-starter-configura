@@ -1,8 +1,9 @@
 import { Link, useLocation, useParams } from "@tanstack/react-router"
-import { MagnifyingGlass, User } from "@medusajs/icons"
+import { User } from "@medusajs/icons"
 import { useState } from "react"
 import { MegaMenu } from "./mega-menu"
 import { CartDropdown } from "./cart"
+import { SearchDrawer } from "./search/search-drawer"
 
 export default function Navbar() {
   const location = useLocation()
@@ -84,9 +85,7 @@ export default function Navbar() {
 
           {/* Right Utility Icons */}
           <div className="flex items-center gap-1 flex-1 justify-end">
-            <button className="p-2.5 hover:text-[#737373] transition-colors" aria-label="Search">
-              <MagnifyingGlass className="w-[18px] h-[18px]" />
-            </button>
+            <SearchDrawer />
 
             <Link
               to="/$countryCode/account"
