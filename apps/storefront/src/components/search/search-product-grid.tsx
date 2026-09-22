@@ -6,8 +6,10 @@ import { useHits, useInstantSearch } from "react-instantsearch"
 
 export const SearchProductGrid = ({
   countryCode,
+  currencyCode,
 }: {
   countryCode: string
+  currencyCode: string
 }) => {
   const { items } = useHits<ProductHit>()
   const { status, error, indexUiState } = useInstantSearch()
@@ -60,6 +62,7 @@ export const SearchProductGrid = ({
           key={hit.objectID}
           hit={hit}
           countryCode={countryCode}
+          currencyCode={currencyCode}
         />
       ))}
     </div>

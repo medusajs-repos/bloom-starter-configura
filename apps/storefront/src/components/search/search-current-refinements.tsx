@@ -1,4 +1,8 @@
-import { SEARCH_FACETS } from "@/lib/search-client"
+import {
+  SEARCH_FACETS,
+  indexedCurrency,
+  priceAttribute,
+} from "@/lib/search-client"
 import { formatPrice } from "@/lib/utils/price"
 import { XMark } from "@medusajs/icons"
 import { useClearRefinements, useCurrentRefinements } from "react-instantsearch"
@@ -6,8 +10,7 @@ import { useClearRefinements, useCurrentRefinements } from "react-instantsearch"
 const ATTRIBUTE_LABELS: Record<string, string> = {
   [SEARCH_FACETS.category]: "Category",
   [SEARCH_FACETS.optionValues]: "Option",
-  [SEARCH_FACETS.onSale]: "On sale",
-  [SEARCH_FACETS.minPrice]: "Price",
+  [SEARCH_FACETS.labels]: "Label",
 }
 
 const OPERATOR_LABELS: Record<string, string> = {
@@ -27,6 +30,12 @@ export const SearchCurrentRefinements = ({
   const { items, refine } = useCurrentRefinements()
   const { refine: clearAll, canRefine: canClearAll } = useClearRefinements()
 
+  // The price facets are per currency, so their attribute names carry the
+  // region's indexed currency rather than being fixed.
+  const priceAttributeName = priceAttribute("min_price", currencyCode)
+  const onSaleAttributeName = priceAttribute("on_sale", currencyCode)
+  const priceCurrency = indexedCurrency(currencyCode)
+
   if (!items.length) {
     return null
   }
@@ -38,7 +47,7 @@ export const SearchCurrentRefinements = ({
     >
       {items.flatMap((item) =>
         item.refinements.map((refinement) => {
-          const isPrice = item.attribute === SEARCH_FACETS.minPrice
+          const isPrice = item.attribute === priceAttributeName
           const isOption = item.attribute === SEARCH_FACETS.optionValues
 
           let label = String(refinement.label)
@@ -50,7 +59,7 @@ export const SearchCurrentRefinements = ({
             label = [
               operator,
               Number.isFinite(amount)
-                ? formatPrice({ amount, currency_code: currencyCode })
+                ? formatPrice({ amount, currency_code: priceCurrency })
                 : refinement.label,
             ]
               .filter(Boolean)
@@ -68,9 +77,14 @@ export const SearchCurrentRefinements = ({
               className="flex items-center gap-1.5 border border-neutral-300 px-3 py-1.5 text-xs text-neutral-800 hover:border-neutral-900 transition-colors"
             >
               <span className="text-neutral-500">
-                {ATTRIBUTE_LABELS[item.attribute] ?? item.attribute}
+                {ATTRIBUTE_LABELS[item.attribute] ??
+                  (isPrice
+                    ? "Price"
+                    : item.attribute === onSaleAttributeName
+                      ? "On sale"
+                      : item.attribute)}
               </span>
-              {item.attribute !== SEARCH_FACETS.onSale && <span>{label}</span>}
+              {item.attribute !== onSaleAttributeName && <span>{label}</span>}
               <XMark className="w-3 h-3" />
             </button>
           )

@@ -4,8 +4,9 @@ import { SearchFilterBar } from "@/components/search/search-filter-bar"
 import { SearchPagination } from "@/components/search/search-pagination"
 import { SearchProductGrid } from "@/components/search/search-product-grid"
 import { PRODUCT_INDEX_NAME, searchClient } from "@/lib/search-client"
-import { productSearchRouting } from "@/lib/search-routing"
+import { getProductSearchRouting } from "@/lib/search-routing"
 import { useLoaderData } from "@tanstack/react-router"
+import { useMemo } from "react"
 import type { SearchClient } from "instantsearch.js"
 import { Configure, InstantSearch } from "react-instantsearch"
 
@@ -17,6 +18,10 @@ const Store = () => {
   const { countryCode } = loaderData || {}
 
   const currencyCode = region?.currency_code || "usd"
+  const routing = useMemo(
+    () => getProductSearchRouting(currencyCode),
+    [currencyCode]
+  )
 
   return (
     <div className="content-container pt-32 pb-12">
@@ -29,7 +34,7 @@ const Store = () => {
       <InstantSearch
         indexName={PRODUCT_INDEX_NAME}
         searchClient={searchClient as unknown as SearchClient}
-        routing={productSearchRouting}
+        routing={routing}
         future={{ preserveSharedStateOnUnmount: true }}
       >
         <Configure hitsPerPage={HITS_PER_PAGE} />
@@ -41,7 +46,10 @@ const Store = () => {
         <SearchFilterBar currencyCode={currencyCode} />
         <SearchCurrentRefinements currencyCode={currencyCode} />
 
-        <SearchProductGrid countryCode={countryCode} />
+        <SearchProductGrid
+          countryCode={countryCode}
+          currencyCode={currencyCode}
+        />
 
         <SearchPagination />
       </InstantSearch>

@@ -1,6 +1,6 @@
 import { history } from "instantsearch.js/es/lib/routers"
 import type { UiState } from "instantsearch.js"
-import { PRODUCT_INDEX_NAME } from "@/lib/search-client"
+import { PRODUCT_INDEX_NAME, priceAttribute } from "@/lib/search-client"
 import { indexNameToSortSlug, sortSlugToIndexName } from "@/lib/search-sort"
 
 type ProductRouteState = {
@@ -35,50 +35,60 @@ const toArray = (value: string | string[] | undefined): string[] | undefined => 
   return values.length ? values : undefined
 }
 
-export const productSearchRouting = {
-  router: history<ProductRouteState>({
-    getLocation: () =>
-      typeof window === "undefined" ? SERVER_LOCATION : window.location,
-  }),
-  stateMapping: {
-    stateToRoute(uiState: UiState): ProductRouteState {
-      const indexUiState = uiState[PRODUCT_INDEX_NAME] ?? {}
+/**
+ * The URL keys stay currency-agnostic (`price`, `sale`) while the refinements
+ * they map to are per currency, so a shared link keeps working in a region
+ * that prices in something else.
+ */
+export const getProductSearchRouting = (currencyCode: string) => {
+  const priceAttributeName = priceAttribute("min_price", currencyCode)
+  const onSaleAttributeName = priceAttribute("on_sale", currencyCode)
 
-      return {
-        q: indexUiState.query || undefined,
-        category: indexUiState.refinementList?.category,
-        options: indexUiState.refinementList?.option_values,
-        sale: indexUiState.toggle?.on_sale ? "true" : undefined,
-        price: indexUiState.range?.min_price,
-        sort: indexNameToSortSlug(indexUiState.sortBy),
-        page:
-          indexUiState.page && indexUiState.page > 1
-            ? String(indexUiState.page)
-            : undefined,
-      }
-    },
-    routeToState(routeState: ProductRouteState = {}): UiState {
-      const category = toArray(routeState.category)
-      const optionValues = toArray(routeState.options)
-      const page = Number(routeState.page)
+  return {
+    router: history<ProductRouteState>({
+      getLocation: () =>
+        typeof window === "undefined" ? SERVER_LOCATION : window.location,
+    }),
+    stateMapping: {
+      stateToRoute(uiState: UiState): ProductRouteState {
+        const indexUiState = uiState[PRODUCT_INDEX_NAME] ?? {}
 
-      return {
-        [PRODUCT_INDEX_NAME]: {
-          query: routeState.q,
-          refinementList: {
-            ...(category ? { category } : {}),
-            ...(optionValues ? { option_values: optionValues } : {}),
+        return {
+          q: indexUiState.query || undefined,
+          category: indexUiState.refinementList?.category,
+          options: indexUiState.refinementList?.option_values,
+          sale: indexUiState.toggle?.[onSaleAttributeName] ? "true" : undefined,
+          price: indexUiState.range?.[priceAttributeName],
+          sort: indexNameToSortSlug(indexUiState.sortBy, currencyCode),
+          page:
+            indexUiState.page && indexUiState.page > 1
+              ? String(indexUiState.page)
+              : undefined,
+        }
+      },
+      routeToState(routeState: ProductRouteState = {}): UiState {
+        const category = toArray(routeState.category)
+        const optionValues = toArray(routeState.options)
+        const page = Number(routeState.page)
+
+        return {
+          [PRODUCT_INDEX_NAME]: {
+            query: routeState.q,
+            refinementList: {
+              ...(category ? { category } : {}),
+              ...(optionValues ? { option_values: optionValues } : {}),
+            },
+            ...(routeState.sale === "true"
+              ? { toggle: { [onSaleAttributeName]: true } }
+              : {}),
+            ...(routeState.price
+              ? { range: { [priceAttributeName]: routeState.price } }
+              : {}),
+            sortBy: sortSlugToIndexName(routeState.sort, currencyCode),
+            page: Number.isFinite(page) && page > 1 ? page : undefined,
           },
-          ...(routeState.sale === "true"
-            ? { toggle: { on_sale: true } }
-            : {}),
-          ...(routeState.price
-            ? { range: { min_price: routeState.price } }
-            : {}),
-          sortBy: sortSlugToIndexName(routeState.sort),
-          page: Number.isFinite(page) && page > 1 ? page : undefined,
-        },
-      }
+        }
+      },
     },
-  },
+  }
 }

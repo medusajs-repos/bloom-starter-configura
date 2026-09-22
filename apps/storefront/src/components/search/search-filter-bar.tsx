@@ -1,5 +1,9 @@
-import { SEARCH_FACETS } from "@/lib/search-client"
-import { SORT_OPTIONS } from "@/lib/search-sort"
+import {
+  SEARCH_FACETS,
+  indexedCurrency,
+  priceAttribute,
+} from "@/lib/search-client"
+import { getSortOptions } from "@/lib/search-sort"
 import { formatPrice } from "@/lib/utils/price"
 import { ChevronDown } from "@medusajs/icons"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -173,9 +177,9 @@ const OptionValueRefinements = ({ openId, onToggle }: SharedDropdownProps) => {
   )
 }
 
-const OnSaleRefinement = () => {
+const OnSaleRefinement = ({ currencyCode }: { currencyCode: string }) => {
   const { value, refine } = useToggleRefinement({
-    attribute: SEARCH_FACETS.onSale,
+    attribute: priceAttribute("on_sale", currencyCode),
     on: true,
   })
 
@@ -203,8 +207,9 @@ const PriceRefinement = ({
   onToggle,
   currencyCode,
 }: SharedDropdownProps & { currencyCode: string }) => {
+  const priceCurrency = indexedCurrency(currencyCode)
   const { start, range, refine, canRefine } = useRange({
-    attribute: SEARCH_FACETS.minPrice,
+    attribute: priceAttribute("min_price", currencyCode),
   })
 
   const { min, max } = range
@@ -250,8 +255,8 @@ const PriceRefinement = ({
           }}
         >
           <p className="text-xs text-neutral-500">
-            {formatPrice({ amount: min, currency_code: currencyCode })} –{" "}
-            {formatPrice({ amount: max, currency_code: currencyCode })}
+            {formatPrice({ amount: min, currency_code: priceCurrency })} –{" "}
+            {formatPrice({ amount: max, currency_code: priceCurrency })}
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -295,9 +300,13 @@ const PriceRefinement = ({
   )
 }
 
-const SortRefinement = ({ openId, onToggle }: SharedDropdownProps) => {
+const SortRefinement = ({
+  openId,
+  onToggle,
+  currencyCode,
+}: SharedDropdownProps & { currencyCode: string }) => {
   const { currentRefinement, options, refine } = useSortBy({
-    items: SORT_OPTIONS.map((option) => ({
+    items: getSortOptions(currencyCode).map((option) => ({
       value: option.value,
       label: option.label,
     })),
@@ -382,11 +391,15 @@ export const SearchFilterBar = ({ currencyCode }: { currencyCode: string }) => {
           onToggle={toggle}
           currencyCode={currencyCode}
         />
-        <OnSaleRefinement />
+        <OnSaleRefinement currencyCode={currencyCode} />
       </div>
 
       <div className="flex items-center gap-6">
-        <SortRefinement openId={openId} onToggle={toggle} />
+        <SortRefinement
+          openId={openId}
+          onToggle={toggle}
+          currencyCode={currencyCode}
+        />
         <ResultCount />
       </div>
     </div>

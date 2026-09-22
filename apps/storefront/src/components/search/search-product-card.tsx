@@ -1,26 +1,29 @@
 import { Price } from "@/components/ui/price"
 import { Thumbnail } from "@/components/ui/thumbnail"
-import type { ProductHit } from "@/lib/search-client"
+import { hitPricing, type ProductHit } from "@/lib/search-client"
 import { getPricePercentageDiff } from "@/lib/utils/price"
 import { Link } from "@tanstack/react-router"
 
 export const SearchProductCard = ({
   hit,
   countryCode,
+  currencyCode,
 }: {
   hit: ProductHit
   countryCode: string
+  currencyCode: string
 }) => {
   if (!hit.handle) {
     return null
   }
 
-  const price = typeof hit.min_price === "number" ? hit.min_price : undefined
-  const originalPrice =
-    typeof hit.original_price === "number" ? hit.original_price : undefined
-  const currencyCode = hit.currency_code ?? undefined
-  const isDiscounted =
-    price !== undefined && originalPrice !== undefined && originalPrice > price
+  const pricing = hitPricing(hit, currencyCode)
+  const maxPrice = pricing.max_price ?? pricing.min_price
+  const isRange =
+    pricing.min_price !== null && (maxPrice ?? 0) > pricing.min_price
+  // A range already spans the discount, so the struck-through original would
+  // describe only the cheapest variant.
+  const isDiscounted = pricing.on_sale && !isRange
 
   return (
     <Link
@@ -35,7 +38,7 @@ export const SearchProductCard = ({
           alt={hit.title ?? ""}
           className="absolute inset-0 object-cover object-center w-full h-full"
         />
-        {hit.on_sale && (
+        {pricing.on_sale && (
           <span className="absolute top-2 left-2 bg-neutral-900 text-white text-[10px] uppercase tracking-wider px-2 py-1">
             Sale
           </span>
@@ -46,17 +49,21 @@ export const SearchProductCard = ({
         <span className="text-neutral-800 font-normal tracking-wide">
           {hit.title}
         </span>
-        {price !== undefined && currencyCode && (
+        {pricing.min_price !== null && (
           <Price
-            price={price}
-            currencyCode={currencyCode}
+            price={pricing.min_price}
+            type={isRange ? "range" : "default"}
+            currencyCode={pricing.currency_code}
             textSize="small"
             className="text-neutral-600 whitespace-nowrap items-end"
             originalPrice={
               isDiscounted
                 ? {
-                    price: originalPrice,
-                    percentage: getPricePercentageDiff(originalPrice, price),
+                    price: pricing.original_price!,
+                    percentage: getPricePercentageDiff(
+                      pricing.original_price!,
+                      pricing.min_price
+                    ),
                   }
                 : undefined
             }

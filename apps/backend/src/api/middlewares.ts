@@ -4,6 +4,7 @@ import {
 import path from "path"
 import fs from "fs"
 import { adminConfiguratorMiddlewares } from "./admin/configurators/middlewares"
+import { storeSearchMiddlewares } from "./store/search/middlewares"
 
 console.log("[MIDDLEWARES] Loading middlewares.ts file")
 
@@ -13,6 +14,7 @@ console.log("[MIDDLEWARES] Uploads directory:", uploadsDir)
 export default defineMiddlewares({
   routes: [
     ...adminConfiguratorMiddlewares,
+    ...storeSearchMiddlewares,
     {
       matcher: "/uploads*",
       middlewares: [
